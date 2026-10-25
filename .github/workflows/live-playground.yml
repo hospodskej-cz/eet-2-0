@@ -22,4 +22,14 @@ jobs:
           bun-version-file: .bun-version
       - run: bun install --frozen-lockfile
       - run: bun run certs:playground
+      # Diagnostics only: shows whether the runner can reach the playground at all (CORS preflight,
+      # rozhraní §2.3.3, answers 204 without sending a sale). Never fails the job by itself.
+      - name: Playground reachability
+        run: |
+          getent hosts pg.trzbyeet.gov.cz || echo "DNS: no answer"
+          curl -sS -o /dev/null --max-time 20 -X OPTIONS \
+            -H "Origin: https://example.org" -H "Access-Control-Request-Method: POST" \
+            -H "Access-Control-Request-Headers: Content-Type, SOAPAction" \
+            -w "HTTP %{http_code} ip=%{remote_ip} connect=%{time_connect}s tls=%{time_appconnect}s total=%{time_total}s\n" \
+            https://pg.trzbyeet.gov.cz/eet/services/EETServiceSOAP/v4 || echo "curl exit $?"
       - run: bun run test:live

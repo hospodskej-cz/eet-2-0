@@ -3,7 +3,7 @@
  * made-up sales with the shared test certificate CZ00000019; the playground registers nothing
  * and its POKs are not valid (rozhraní §2.2.2). CI: .github/workflows/live-playground.yml.
  */
-import { beforeAll, describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, setDefaultTimeout, test } from "bun:test";
 import {
   createEetTransport,
   createHeader,
@@ -29,13 +29,18 @@ function sale(overrides: Partial<EetReceiptData> = {}): EetReceiptData {
   };
 }
 
+const TRANSPORT_TIMEOUT_MS = 15_000;
+// The test must outlive the transport, otherwise a slow or unreachable playground shows up as an
+// opaque test timeout instead of the transport outcome (uncertain/timeout, not_sent, …).
+setDefaultTimeout(TRANSPORT_TIMEOUT_MS + 10_000);
+
 describe.skipIf(!LIVE)("EET playground (live)", () => {
   let transport: EetTransport;
   beforeAll(async () => {
     transport = createEetTransport({
       environment: "playground",
       certificate: await loadPlaygroundCertificate("CZ00000019"),
-      timeoutMs: 15_000,
+      timeoutMs: TRANSPORT_TIMEOUT_MS,
     });
   });
 
