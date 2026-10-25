@@ -10,5 +10,9 @@
   },
   "engines": {
     "node": ">=22.18.0"
+  },
+  "dependencies": {
+    "@finitoapp/eet-client": "0.4.0",
+    "zod": "4.6.7"
   }
 }

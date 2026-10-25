@@ -1,5 +1,5 @@
 {
-  "$comment": "Official EET 2.0 sources this project is built from. sha256 is of the file as downloaded on retrievedAt. `vendored` files are copied into this repository byte-for-byte; TLP:AMBER documents are only referenced, never copied. Checked by test/contract/sources.test.ts (vendored copies) and scripts/check-spec-drift.ts (upstream).",
+  "$comment": "Official EET 2.0 sources this project is built from. sha256 is of the file as downloaded on retrievedAt. `url` overrides baseUrl/file for sources hosted elsewhere. `vendored` files are copied into this repository byte-for-byte; TLP:AMBER documents are only referenced, never copied. Checked by test/contract/sources.test.ts (vendored copies) and scripts/check-spec-drift.ts (upstream).",
   "retrievedAt": "2026-10-25",
   "baseUrl": "https://eet.gov.cz/assets/cs/cmsmedia/pro-vyvojare/",
   "sources": [
@@ -13,7 +13,8 @@
       "sha256": "c986e85686927e1e153aee0f33090fd6fda80d09b44e564d8b344dde729b1a1e",
       "bytes": 1254218,
       "tlp": null,
-      "vendored": null
+      "vendored": null,
+      "url": null
     },
     {
       "id": "rozhrani-en",
@@ -25,7 +26,8 @@
       "sha256": "b33bb5860431406f985efdeb93d5976f182d3a6c60a9a0dcc99696e76375b557",
       "bytes": 1454524,
       "tlp": null,
-      "vendored": null
+      "vendored": null,
+      "url": null
     },
     {
       "id": "xsd",
@@ -37,7 +39,8 @@
       "sha256": "83597d08520cbfab7e51145df9a765d5ca22e2f9a38644a468d695657c7a032a",
       "bytes": 5756,
       "tlp": null,
-      "vendored": "spec/eet-v4.1/EETXMLSchema.xsd"
+      "vendored": "spec/eet-v4.1/EETXMLSchema.xsd",
+      "url": null
     },
     {
       "id": "wsdl",
@@ -49,7 +52,8 @@
       "sha256": "df149c0bef4ac18c2a6e82116b6eb9bb17d29c055cb0821ac6d3885ec90faeb4",
       "bytes": 2086,
       "tlp": null,
-      "vendored": "spec/eet-v4.1/EETServiceSOAP.wsdl"
+      "vendored": "spec/eet-v4.1/EETServiceSOAP.wsdl",
+      "url": null
     },
     {
       "id": "sample-CZ00000019",
@@ -61,7 +65,8 @@
       "sha256": "4392b4ca0e6eb586c10b6f80d8946f5269f500a5b2b0d94fa7a092ace867ade5",
       "bytes": 4186,
       "tlp": null,
-      "vendored": "spec/eet-v4.1/samples/CZ00000019.eet.v4.req.xml"
+      "vendored": "spec/eet-v4.1/samples/CZ00000019.eet.v4.req.xml",
+      "url": null
     },
     {
       "id": "sample-CZ683555118",
@@ -73,7 +78,8 @@
       "sha256": "a77d28641603ffd85a3bd9eff580f554e5e822741cd0594d84b48b52e7874b75",
       "bytes": 4242,
       "tlp": null,
-      "vendored": "spec/eet-v4.1/samples/CZ683555118.eet.v4.req.xml"
+      "vendored": "spec/eet-v4.1/samples/CZ683555118.eet.v4.req.xml",
+      "url": null
     },
     {
       "id": "sample-CZ8551015704",
@@ -85,7 +91,8 @@
       "sha256": "a61b6ac6cc50b908d68550aa4981b91df0f5d3cbfe564b5d60b545ef70a06bd6",
       "bytes": 4243,
       "tlp": null,
-      "vendored": "spec/eet-v4.1/samples/CZ8551015704.eet.v4.req.xml"
+      "vendored": "spec/eet-v4.1/samples/CZ8551015704.eet.v4.req.xml",
+      "url": null
     },
     {
       "id": "pg",
@@ -97,7 +104,8 @@
       "sha256": "f29c73d3bc84be8d073344dc7053466e9fa143792cbee2bc997f289d67329880",
       "bytes": 97829,
       "tlp": "AMBER",
-      "vendored": null
+      "vendored": null,
+      "url": null
     },
     {
       "id": "prod",
@@ -109,7 +117,8 @@
       "sha256": "c1b97a08860080317a9949e2366bd50736adb219830fb9df326a154c309a9f43",
       "bytes": 89672,
       "tlp": "AMBER",
-      "vendored": null
+      "vendored": null,
+      "url": null
     },
     {
       "id": "metodika",
@@ -121,7 +130,8 @@
       "sha256": "de09d084688e871c639b2813ed30ba77e838667f16ec94604b6a3f4df2c3576f",
       "bytes": 528064,
       "tlp": null,
-      "vendored": null
+      "vendored": null,
+      "url": null
     },
     {
       "id": "zoet",
@@ -133,7 +143,8 @@
       "sha256": "ba2cedc804e391a2c01b370ba0ef3131e6029ecb99b471617196992a8dc36741",
       "bytes": 1280586,
       "tlp": null,
-      "vendored": null
+      "vendored": null,
+      "url": null
     },
     {
       "id": "pg-certs",
@@ -145,55 +156,60 @@
       "sha256": "711ca591e2e58e906212befab55ea72cbc5d960af49e444765b0428751002491",
       "bytes": 21166,
       "tlp": null,
-      "vendored": null
+      "vendored": null,
+      "url": null
     },
     {
       "id": "ca-pg-root",
-      "title": "playground EETv2 NCA Root CA (DER)",
+      "title": "playground EETv2 NCA RootCA RSA 05/2026 (PEM, although PG §3.1.2 says DER)",
       "cite": "PG Root CA",
       "version": null,
       "date": null,
       "file": "ca_eet-root_cert-playground.crt",
       "sha256": "c0257db7f2d9dde3f9413e904814a330cbd2efa41f2ab4ecd8f91f7c5f73f3b6",
-      "bytes": null,
+      "bytes": 2171,
       "tlp": null,
-      "vendored": null
+      "vendored": "spec/ca/ca_eet-root_cert-playground.crt",
+      "url": null
     },
     {
       "id": "ca-pg-sub",
-      "title": "playground EETv2 NCA SubCA (DER)",
+      "title": "playground EETv2 NCA SubCA RSA 05/2026 (PEM, although PG §3.1.3 says DER)",
       "cite": "PG SubCA",
       "version": null,
       "date": null,
       "file": "ca_eet-sub_cert-playground.crt",
       "sha256": "28182077cb77338070e209fe9e950481d01ecbc181dfc76ecd7985bd2e0f9046",
-      "bytes": null,
+      "bytes": 1866,
       "tlp": null,
-      "vendored": null
+      "vendored": "spec/ca/ca_eet-sub_cert-playground.crt",
+      "url": null
     },
     {
       "id": "ca-prod-root",
-      "title": "EETv2 NCA Root CA (PEM)",
+      "title": "EETv2 NCA Root CA RSA 09/2026 (PEM)",
       "cite": "Prod Root CA",
       "version": null,
       "date": null,
       "file": "ca_eet-root_prod.pem",
       "sha256": "462afa5e88c894ec414690baef1440419478b31c8524d5de5237a20ce305ec8b",
-      "bytes": null,
+      "bytes": 2118,
       "tlp": null,
-      "vendored": null
+      "vendored": "spec/ca/ca_eet-root_prod.pem",
+      "url": null
     },
     {
       "id": "ca-prod-sub",
-      "title": "EETv2 NCA SubCA (PEM)",
+      "title": "EETv2 NCA SubCA RSA 10/2026 (PEM)",
       "cite": "Prod SubCA",
       "version": null,
       "date": null,
       "file": "ca_eet-sub_prod.pem",
       "sha256": "fd0ae27da503f70c99b85affe3c85640cfbc8569b39aef15252c415c30215800",
-      "bytes": null,
+      "bytes": 1842,
       "tlp": null,
-      "vendored": null
+      "vendored": "spec/ca/ca_eet-sub_prod.pem",
+      "url": null
     },
     {
       "id": "caeet-api",
@@ -205,7 +221,21 @@
       "sha256": "c82cf6678f0c2ede416af1171fddcb661c37d11240f7837e213b9f5294eaec2c",
       "bytes": null,
       "tlp": null,
-      "vendored": null
+      "vendored": null,
+      "url": null
+    },
+    {
+      "id": "ica-public-ca-2022",
+      "title": "I.CA Public CA/RSA 06/2022 (DER) — issuer of the EET response-signing certificate (PG §3.3, P §3.3); downloaded from the AIA of the playground signer",
+      "cite": "I.CA Public CA",
+      "version": null,
+      "date": null,
+      "file": "pca22_rsa.cer",
+      "url": "http://s.ica.cz/pca22_rsa.cer",
+      "sha256": "df5baf6d7e1a7d14e9911c5b8c676ec6ebcad9354a74f4ac7314e133e07a94de",
+      "bytes": 1820,
+      "tlp": null,
+      "vendored": "spec/ca/ica/pca22_rsa.cer"
     }
   ],
   "listing": {

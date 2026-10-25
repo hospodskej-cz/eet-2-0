@@ -10,6 +10,8 @@ export interface Source {
   readonly date: string | null;
   /** File name under `baseUrl`. */
   readonly file: string;
+  /** Absolute download URL for sources not hosted under `baseUrl` (e.g. I.CA certificates). */
+  readonly url: string | null;
   readonly sha256: string;
   readonly bytes: number | null;
   /** Traffic Light Protocol marking printed on the document, if any. */
@@ -39,7 +41,7 @@ export async function loadSources(): Promise<SourcesManifest> {
 }
 
 export function sourceUrl(manifest: SourcesManifest, source: Source): string {
-  return new URL(source.file, manifest.baseUrl).href;
+  return source.url ?? new URL(source.file, manifest.baseUrl).href;
 }
 
 export function sha256Hex(data: ArrayBuffer | Uint8Array): string {

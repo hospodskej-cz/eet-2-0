@@ -19,3 +19,6 @@ eet.config.yaml
 *.db
 
 .DS_Store
+
+# Public trust anchors (CA certificates) are vendored on purpose.
+!spec/ca/**

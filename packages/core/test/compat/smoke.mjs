@@ -6,6 +6,10 @@ import {
   EET_MAX_MESSAGE_BYTES,
   EET_NAMESPACE,
   EET_SOAP_ACTION,
+  EetReceiptDataSchema,
+  formatEetDateTime,
+  isIssuedBy,
+  trustAnchor,
 } from "../../dist/index.js";
 
 const runtime =
@@ -31,5 +35,27 @@ if (
 ) {
   throw new Error(`${runtime}: Web Crypto or fetch missing — required by the protocol core`);
 }
+
+// Intl time zones, the DER/X.509 reader, Web Crypto signature checks and zod, without network.
+const formatted = formatEetDateTime(new Date("2026-10-25T01:30:00Z"));
+if (formatted !== "2026-10-25T02:30:00+01:00") {
+  throw new Error(`${runtime}: formatEetDateTime gave ${formatted}`);
+}
+const sub = trustAnchor("eetPlaygroundSub");
+if (sub.subject.commonName !== "playground EETv2 NCA SubCA RSA 05/2026") {
+  throw new Error(`${runtime}: unexpected trust anchor ${sub.subject.commonName}`);
+}
+if (!(await isIssuedBy(sub, trustAnchor("eetPlaygroundRoot")))) {
+  throw new Error(`${runtime}: CA EET playground chain does not verify`);
+}
+const parsed = EetReceiptDataSchema.safeParse({
+  eic_popl: "CZ00000019",
+  id_jednotky: "11",
+  id_pokl: "1",
+  porad_cis: "1",
+  dat_trzby: formatted,
+  celk_trzba: "-0.00",
+});
+if (parsed.success) throw new Error(`${runtime}: schema accepted -0.00`);
 
 console.log(`core compat ok on ${runtime}`);

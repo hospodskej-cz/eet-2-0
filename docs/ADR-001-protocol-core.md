@@ -1,7 +1,15 @@
 # ADR-001: Protokolové jádro nad `@finitoapp/eet-client` za rozhraním `EetTransport`
 
-- **Stav:** přijato (fáze 1, 25. 10. 2026). Revize po prvním živém ověření proti playgroundu ve
-  fázi 2.
+- **Stav:** přijato (fáze 1, 25. 10. 2026). Ve fázi 2 implementováno a ověřeno živě proti
+  playgroundu (`packages/core/src/finito-transport.ts`). Odchylky od předběžného návrhu níže:
+  - `TransportRequest.header` používá XSD názvy (`uuid_zpravy`, `dat_odesl`, `prvni_zaslani`,
+    `overeni`), stejně jako `<Data>`;
+  - výsledek `not_sent` má důvody `network` | `signer` | `too_large` | `aborted`;
+  - výsledek `uncertain` má navíc důvody `aborted` a `environment_mismatch`
+    (`packages/core/src/transport.ts`);
+  - pro každé `send()` vzniká nová instance klienta, aby zachycená data jednoho požadavku
+    nepřepsal souběžný požadavek;
+  - ověřování odpovědi řeší [ADR-002](ADR-002-response-trust.md).
 - **Rozsah:** `packages/core`. Politika fronty a opakování (`retryUncertain`) sem nepatří. Je
   odvozená v [SPEC_NOTES §11](SPEC_NOTES.md#11-pravidla-odesílání-a-opakování) a rozhodne se
   v samostatném ADR ve fázi 4.

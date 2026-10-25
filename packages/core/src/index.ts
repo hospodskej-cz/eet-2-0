@@ -1,30 +1,73 @@
 /**
  * @eet-gateway/core — protocol layer for EET 2.0 (Czech electronic registration of sales).
  *
- * Phase 1 exposes only constants taken verbatim from the official interface definition; each
- * is cross-checked against the vendored XSD/WSDL by `test/contract/sources.test.ts`. The
- * `EetTransport` abstraction arrives in phase 2 (see docs/ADR-001-protocol-core.md).
+ * Load a CA EET certificate with `loadPkcs12`, create a transport with `createEetTransport` and
+ * send one data message per `send()` call; see docs/ADR-001-protocol-core.md and
+ * docs/ADR-002-response-trust.md. Types of the underlying protocol library are not exported.
  */
 
-export const VERSION = "0.0.0";
-
-/** Interface version implemented (XSD/WSDL `version`, rozhraní v1.2 §1.1). */
-export const EET_INTERFACE_VERSION = "4.1";
-
-/** Target namespace of `EETXMLSchema.xsd` (rozhraní v1.2 §3.1). */
-export const EET_NAMESPACE = "http://fs.gov.cz/eet/schema/v4";
-
-/** `soapAction` of the `OdeslaniTrzby` operation in `EETServiceSOAP.wsdl`. */
-export const EET_SOAP_ACTION = "http://fs.gov.cz/eet/OdeslaniTrzby";
-
-/**
- * Non-production (playground) endpoint (PG přístupové informace v1.1 §2.1). The production
- * endpoint is deliberately not a constant: it always comes from configuration.
- */
-export const EET_PLAYGROUND_ENDPOINT = "https://pg.trzbyeet.gov.cz/eet/services/EETServiceSOAP/v4";
-
-/**
- * Maximum size of the signed SOAP envelope in bytes (rozhraní v1.2 §2.2.3, item 5). The spec
- * says "12 kB" without defining the unit; 12 000 is the conservative reading.
- */
-export const EET_MAX_MESSAGE_BYTES = 12_000;
+export { base64ToBytes, bytesToHex, certificateToDer, sha256Hex } from "./bytes.ts";
+export {
+  CertificateError,
+  type CertificateInfo,
+  detectEnvironment,
+  type EetEnvironment,
+  loadPkcs12,
+  type RegisterCertificate,
+  type Signer,
+  trustAnchor,
+} from "./certificate.ts";
+export * from "./constants.ts";
+export {
+  type CreateHeaderOptions,
+  createHeader,
+  DEFAULT_TIME_ZONE,
+  formatEetDateTime,
+} from "./datetime.ts";
+export { DerError } from "./der.ts";
+export {
+  type CreateEetTransportOptions,
+  createEetTransport,
+  DEFAULT_TIMEOUT_MS,
+  MIN_TIMEOUT_MS,
+  redactSignatureValues,
+  TransportConfigError,
+} from "./finito-transport.ts";
+export {
+  createResponseVerifier,
+  GFR_ORGANIZATION_IDENTIFIER,
+  playgroundResponseTrust,
+  productionResponseTrust,
+  type ResponseSignatureInput,
+  type ResponseTrust,
+  type ResponseVerifierOptions,
+  responseTrustFrom,
+} from "./response-trust.ts";
+export {
+  EET_PATTERNS,
+  type EetHeader,
+  EetHeaderSchema,
+  type EetReceiptData,
+  EetReceiptDataSchema,
+  isEetDateTime,
+} from "./schema.ts";
+export type {
+  EetTransport,
+  EetWarning,
+  NotSentReason,
+  SendOptions,
+  TransportMeta,
+  TransportOutcome,
+  TransportRequest,
+  UncertainReason,
+} from "./transport.ts";
+export { TRUST_ANCHORS, type TrustAnchorName } from "./trust-anchors.ts";
+export {
+  type Certificate,
+  certificateFingerprint,
+  type DistinguishedName,
+  importRsaPublicKey,
+  isIssuedBy,
+  isValidAt,
+  parseCertificate,
+} from "./x509.ts";

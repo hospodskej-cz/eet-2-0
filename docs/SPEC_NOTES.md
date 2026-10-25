@@ -302,9 +302,9 @@ CZ00000019|243|24/A-6/Brno_2|#135433c/11/2027|2027-01-09T16:45:36+01:00|3264.50
   odpovídají hashům v `sources.json` a `openssl verify` leaf certifikátu `CZ00000019` vůči
   nim projde. Jsou ale v **PEM**, ne v DER, jak uvádí PG §3.1.2–3.1.3. Vydávají
   **pokladní** certifikáty; potvrzovací odpovědi jimi podepsané nejsou (to dělá I.CA, viz níže).
-- **Návrh:** kořenové a podřízené certifikáty CA EET (PG i produkce) jsou veřejné trust anchors.
-  Ve fázi 2 je uložíme do `spec/ca/` s hashi ze `sources.json`, aby šel ověřit řetězec
-  pokladního certifikátu.
+- Kořenové a podřízené certifikáty CA EET (PG i produkce) a `I.CA Public CA/RSA 06/2022` jsou
+  od fáze 2 uložené ve `spec/ca/` (hashe v `sources.json`) a vložené do jádra jako kotvy důvěry.
+  Slouží k určení prostředí pokladního certifikátu a k ověření podpisu potvrzení (ADR-002).
 - **Podpis odpovědí:** certifikát vydaný I.CA, ne CA EET (§2). Řetězec I.CA není součástí žádného
   dokumentu EET, proto **návrh:** pinning (OQ3). Skutečný certifikát PG je v §15.
 - **Obnova:** CA EET má REST API (`caeetapi_jwt.zip`, OpenAPI s JWT). Je to mimo rozsah, připraví
@@ -346,15 +346,10 @@ Do rozhodnutí platí doporučená varianta. V závorce je fáze, kterou otázka
   `late_first_submission`.
 - **OQ2 Výchozí `retryUncertain` (fáze 4).** Doporučení: `true` (§11 pravidlo 6, §10). Každý POK
   se uloží; víc POK pro jednu tržbu je informativní warning, ne chyba.
-- **OQ3 Ověřování podpisu odpovědi (fáze 2).** Podklady jsou získané (§15): leaf certifikát PG
-  platí jen do 2027-06-08, vydávající `I.CA Public CA/RSA 06/2022` do 2032-06-17. Pin samotného
-  leafu by tedy v červnu 2027 rozbil všechny instalace, které si nestihnou aktualizovat
-  konfiguraci. **Upravené doporučení:** výchozí důvěra = podpis leafem, který je podepsaný
-  pinovaným certifikátem `I.CA Public CA/RSA 06/2022` (SPKI pin) a je v době ověření platný,
-  a subjekt leafu má `O = Generální finanční ředitelství` a `organizationIdentifier = NTRCZ-72080043`.
-  Piny leaf certifikátu budou volitelný přísnější režim. Když ověření selže → `uncertain` bez
-  auto-opakování a s alertem (server tržbu nejspíš zapsal). Otevřené zůstává, jak parsovat X.509
-  v runtime-neutrálním jádru (malý ASN.1 parser, nebo knihovna); rozhodne plán fáze 2.
+- ~~**OQ3 Ověřování podpisu odpovědi**~~ **Vyřešeno ve fázi 2:** viz
+  [ADR-002](ADR-002-response-trust.md). Pin vydávající CA I.CA, kontrola platnosti a subjektu
+  GFŘ (`NTRCZ-72080043`), volitelně piny leafů; selhání ověření → `uncertain/signature`. Čtení
+  X.509 řeší vlastní minimální čtečka DER. Na produkci zůstává neověřené (§15).
 - **OQ4 Offset `dat_trzby` (fáze 3).** Doporučení: vstup se `Z` nebo cizím offsetem převést do
   zóny pokladny (stejný okamžik) a vrátit warning. Do fronty se uloží výsledný řetězec, který se
   při opakování použije beze změny.
