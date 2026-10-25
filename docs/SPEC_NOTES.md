@@ -296,6 +296,12 @@ CZ00000019|243|24/A-6/Brno_2|#135433c/11/2027|2027-01-09T16:45:36+01:00|3264.50
   Leaf `CZ00000019` platí 2026-05-13 09:40:23Z až 2027-05-14 09:40:23Z a je bajtově shodný
   s certifikátem ve vzorovém požadavku (SHA-256 `7EC806E6…DC061C05`). KeyUsage odpovídá profilu.
   OID politiky je ale `1.2.203.19122063.10.2.102.0.1`, ne dokumentované `…10.4.102.x.y`.
+- **CA certifikáty PG (ověřeno 25. 10. 2026):** `ca_eet-root_cert-playground.crt` (SHA-256
+  otisk certifikátu `61C1E3C7…7C604619`, platnost 2026-05-05 až 2036-05-02) a
+  `ca_eet-sub_cert-playground.crt` (`464FFC1F…D60627CA`, 2026-05-05 až 2030-05-04). Soubory
+  odpovídají hashům v `sources.json` a `openssl verify` leaf certifikátu `CZ00000019` vůči
+  nim projde. Jsou ale v **PEM**, ne v DER, jak uvádí PG §3.1.2–3.1.3. Vydávají
+  **pokladní** certifikáty; potvrzovací odpovědi jimi podepsané nejsou (to dělá I.CA, viz níže).
 - **Návrh:** kořenové a podřízené certifikáty CA EET (PG i produkce) jsou veřejné trust anchors.
   Ve fázi 2 je uložíme do `spec/ca/` s hashi ze `sources.json`, aby šel ověřit řetězec
   pokladního certifikátu.
@@ -328,6 +334,7 @@ CZ00000019|243|24/A-6/Brno_2|#135433c/11/2027|2027-01-09T16:45:36+01:00|3264.50
 | 13  | „Každá pokladna má vlastní .p12“                                   | Podpis aktuálně platným certifikátem (R §3.3), během obnovy jsou platné dva                                                                                                                                                                      | Více .p12 na pokladnu (§12)                                                                               |
 | 14  | Zdroje k přečtení                                                  | Přístupové dokumenty PG a P jsou TLP:AMBER                                                                                                                                                                                                       | Jen odkazy, žádné kopie (§1)                                                                              |
 | 15  | Podklady z finitoapp `docs/reference/eet-2.0`                      | finitoapp přepisuje rozhraní v1.1; aktuální je **v1.2** (CORS, formální opravy)                                                                                                                                                                  | Pracujeme s v1.2                                                                                          |
+| 16  | —                                                                  | PG §3.1.2–3.1.3: CA certifikáty PG „v binárním formátu DER“; zveřejněné soubory `.crt` jsou ve skutečnosti **PEM**                                                                                                                               | Loader CA certifikátů musí přijmout PEM i DER                                                             |
 
 ## 14. Otevřené otázky
 
