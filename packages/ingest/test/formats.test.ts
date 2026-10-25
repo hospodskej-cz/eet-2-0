@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { parseCsv } from "../src/formats/csv.ts";
 import { readXmlSales } from "../src/formats/xml.ts";
-import { formatFromContentType, parseSales } from "../src/index.ts";
+import { formatFromContentType, parseSales, readSales } from "../src/index.ts";
 
 describe("parseCsv", () => {
   test("doubled quotes, delimiters and line breaks inside quotes", () => {
@@ -45,6 +45,24 @@ describe("readXmlSales", () => {
   test("Trzba without Data is reported per row", () => {
     const result = parseSales("<Trzba><Hlavicka prvni_zaslani='true'/></Trzba>", "xml");
     expect(result.rows[0]?.result).toMatchObject({ ok: false, issues: [{ code: "required" }] });
+  });
+});
+
+describe("readSales", () => {
+  test("rows as plain objects, before normalization", () => {
+    expect(readSales("a;b\r\n1,5;x", "csv").rows).toEqual([
+      { row: 2, input: { a: "1,5", b: "x" }, warnings: [], issues: [] },
+    ]);
+    const xml = readSales(
+      '<Trzba><Hlavicka uuid_zpravy="u" overeni="true"/><Data porad_cis="1"/></Trzba>',
+      "xml",
+    );
+    expect(xml.rows[0]).toMatchObject({ row: 1, input: { porad_cis: "1", overeni: "true" } });
+    expect(xml.rows[0]?.warnings.map((w) => w.code)).toEqual([1042]);
+    expect(readSales('{"a":1}\n{oops', "ndjson").rows).toMatchObject([
+      { row: 1, input: { a: 1 } },
+      { row: 2, issues: [{ code: "parse_error" }] },
+    ]);
   });
 });
 

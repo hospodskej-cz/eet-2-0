@@ -40,19 +40,20 @@ await queue.stop(); // při ukončení aplikace: počká na rozběhnuté pokusy
 
 ## API
 
-| Funkce                                                               | Popis                                                                                                             |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `createEetQueue(options)`                                            | Vytvoří frontu (volby níže)                                                                                       |
-| `queue.submit(input, options?)`                                      | Ingest → uložení → odeslání. Špatný vstup nevyhodí výjimku, vrátí `invalid`                                       |
-| `queue.submitBatch(source, format, options?)`                        | `parseSales` + `submit` po řádcích; výsledek pro každý řádek s jeho číslem. Jedna dávka patří jedné pokladně      |
-| `queue.get(id)`                                                      | Aktuální `SaleResult`, nebo `undefined`                                                                           |
-| `queue.attempts(id)`                                                 | Historie pokusů (`uuid_zpravy`, `dat_odesl`, `prvni_zaslani`, výsledek, endpoint, …)                              |
-| `queue.retry(id)`                                                    | Ruční okamžité odeslání. Nejde u `accepted`, `verification_ok` a `invalid` (`QueueError` s kódem `not_retryable`) |
-| `queue.list({ status, register, from, to, overdue, limit, cursor })` | Přehled, od nejnovějších. `from`/`to` filtruje podle `dat_trzby`, `limit` je výchozí 50, nejvýš 500               |
-| `queue.runDue()`                                                     | Pošle vše splatné a počká na výsledek. Pro vlastní plánovač (cron, serverless) a testy                            |
-| `queue.start()` / `queue.stop()`                                     | Worker na pozadí, kontroluje frontu po `pollIntervalMs`                                                           |
-| `createSqliteStore(db)` / `createMemoryStore()`                      | Úložiště. Paměťové je jen pro testy: při ukončení procesu o vše přijde                                            |
-| `SaleResultSchema`                                                   | zod schéma výsledku, stejné pro knihovnu, HTTP API i CLI                                                          |
+| Funkce                                                               | Popis                                                                                                                                                         |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createEetQueue(options)`                                            | Vytvoří frontu (volby níže)                                                                                                                                   |
+| `queue.submit(input, options?)`                                      | Ingest → uložení → odeslání. Špatný vstup nevyhodí výjimku, vrátí `invalid`                                                                                   |
+| `queue.submitBatch(source, format, options?)`                        | `readSales` + `submit` po řádcích; výsledek pro každý řádek s jeho číslem. Řádek může určit vlastní pokladnu (pole `register`), `options.register` je výchozí |
+| `queue.validateBatch(source, format, options?)`                      | Stejný ingest a výběr pokladny jako `submitBatch`, ale nic neuloží ani neodešle (`ValidationResult`)                                                          |
+| `queue.get(id)`                                                      | Aktuální `SaleResult`, nebo `undefined`                                                                                                                       |
+| `queue.attempts(id)`                                                 | Historie pokusů (`uuid_zpravy`, `dat_odesl`, `prvni_zaslani`, výsledek, endpoint, …)                                                                          |
+| `queue.retry(id)`                                                    | Ruční okamžité odeslání. Nejde u `accepted`, `verification_ok` a `invalid` (`QueueError` s kódem `not_retryable`)                                             |
+| `queue.list({ status, register, from, to, overdue, limit, cursor })` | Přehled, od nejnovějších. `from`/`to` filtruje podle `dat_trzby`, `limit` je výchozí 50, nejvýš 500                                                           |
+| `queue.runDue()`                                                     | Pošle vše splatné a počká na výsledek. Pro vlastní plánovač (cron, serverless) a testy                                                                        |
+| `queue.start()` / `queue.stop()`                                     | Worker na pozadí, kontroluje frontu po `pollIntervalMs`                                                                                                       |
+| `createSqliteStore(db)` / `createMemoryStore()`                      | Úložiště. Paměťové je jen pro testy: při ukončení procesu o vše přijde                                                                                        |
+| `SaleResultSchema`                                                   | zod schéma výsledku, stejné pro knihovnu, HTTP API i CLI                                                                                                      |
 
 **Volby `createEetQueue`:**
 

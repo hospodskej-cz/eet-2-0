@@ -1,0 +1,35 @@
+# EET Gateway — example configuration (reference: docs/SERVER.md).
+# Copy to eet.config.yaml. Relative paths are relative to this file.
+# Every value can be overridden by an EET_* environment variable (shown on the right).
+
+server:
+  host: 0.0.0.0 # EET_HOST
+  port: 8080 # EET_PORT
+
+# Bearer tokens accepted by /v1 (at least 16 characters). Prefer EET_API_KEYS=key1,key2.
+apiKeys: []
+
+database: ./data/eet-queue.db # EET_DB_PATH (SQLite)
+timeZone: Europe/Prague # EET_DEFAULT_TZ
+
+# Required as soon as a register is production. Never hard-coded in the library.
+# productionEndpoint: https://trzbyeet.gov.cz/eet/services/EETServiceSOAP/v4   # EET_ENDPOINT_PRODUCTION
+
+queue:
+  retryUncertain: true # resend when an answer was lost (docs/ADR-003-queue-retry-policy.md)
+  concurrency: 4
+  pollIntervalMs: 5000
+
+registers:
+  kasa-1:
+    environment: playground # or production
+    certificates:
+      # The .p12 from CA EET. Its password never goes into this file:
+      # passwordFile, or EET_REGISTER_KASA_1_P12_PASSWORD.
+      - p12: ./certs/kasa-1.p12 # EET_REGISTER_KASA_1_P12_PATH
+        passwordFile: ./secrets/kasa-1.password
+      # During renewal add the new certificate here; the valid one signs.
+    defaults: # so sales need not repeat them; eic_popl comes from the certificate
+      id_jednotky: 11
+      id_pokl: KASA-1
+    timeoutMs: 10000 # how long to wait for EET (≥ 2000, ZoET §19)

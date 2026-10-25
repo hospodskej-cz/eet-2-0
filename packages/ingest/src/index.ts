@@ -10,6 +10,9 @@ export {
   type BatchRow,
   formatFromContentType,
   parseSales,
+  type ReadResult,
+  type ReadRow,
+  readSales,
 } from "./batch.ts";
 export { type IngestIssue, type IngestWarning, type IssueCode, WarningCode } from "./codes.ts";
 export {

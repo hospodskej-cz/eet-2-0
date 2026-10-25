@@ -18,7 +18,7 @@ import {
   inputRegister,
   type NormalizedSale,
   normalizeSale,
-  parseSales,
+  readSales,
 } from "@eet-gateway/ingest";
 import { QueueError, QueueWarningCode } from "./codes.ts";
 import { backoffDelay, DEFAULT_RETRY_POLICY, decide, type RetryPolicy } from "./policy.ts";
@@ -30,6 +30,7 @@ import {
   type SaleResult,
   type SaleStatus,
   type SaleWarning,
+  type ValidationResult,
 } from "./result.ts";
 import {
   type AttemptOutcome,
@@ -57,7 +58,9 @@ export interface EetQueueOptions {
   readonly registers: Readonly<Record<string, RegisterConfig>>;
   /** Default `true`, see `RetryPolicy.retryUncertain` and ADR-003. */
   readonly retryUncertain?: boolean | undefined;
-  readonly retry?: Partial<Omit<RetryPolicy, "retryUncertain">> | undefined;
+  readonly retry?:
+    | { readonly [K in keyof Omit<RetryPolicy, "retryUncertain">]?: number | undefined }
+    | undefined;
   /** Attempts the worker runs at once. Default 4. */
   readonly concurrency?: number | undefined;
   /**
@@ -86,6 +89,12 @@ export interface SubmitOptions {
   readonly verify?: boolean | undefined;
   /** Same key + same sale → the stored result; same key + another sale → `invalid`. */
   readonly idempotencyKey?: string | undefined;
+}
+
+export interface BatchValidationResult {
+  readonly rows: { readonly row: number; readonly result: ValidationResult }[];
+  readonly warnings: SaleWarning[];
+  readonly issues: SaleIssue[];
 }
 
 export interface BatchSubmitResult {
@@ -144,12 +153,21 @@ export type QueueEvent =
 export interface EetQueue {
   /** Validates (ingest), stores, then sends one sale. Never throws for bad input: `invalid`. */
   submit(input: unknown, options?: SubmitOptions): Promise<SaleResult>;
-  /** One register per batch; idempotency keys become `${key}:${row}`. */
+  /**
+   * Every row is submitted on its own; a row may name its register (`options.register` is the
+   * default). Idempotency keys become `${key}:${row}`.
+   */
   submitBatch(
     source: string | Uint8Array,
     format: BatchFormat,
     options?: SubmitOptions,
   ): Promise<BatchSubmitResult>;
+  /** Ingest and register choice exactly as `submitBatch` does; nothing is stored or sent. */
+  validateBatch(
+    source: string | Uint8Array,
+    format: BatchFormat,
+    options?: Pick<SubmitOptions, "register" | "verify">,
+  ): BatchValidationResult;
   get(id: string): Promise<SaleResult | undefined>;
   attempts(id: string): Promise<AttemptRecord[]>;
   /** Sends a stored sale again now (never with `prvni_zaslani=true` after a first attempt). */
@@ -171,7 +189,8 @@ export function createEetQueue(options: EetQueueOptions): EetQueue {
   const { store, registers } = options;
   const policy: RetryPolicy = {
     ...DEFAULT_RETRY_POLICY,
-    ...options.retry,
+    // Unset fields keep their defaults.
+    ...Object.fromEntries(Object.entries(options.retry ?? {}).filter(([, v]) => v !== undefined)),
     retryUncertain: options.retryUncertain ?? DEFAULT_RETRY_POLICY.retryUncertain,
   };
   const concurrency = options.concurrency ?? 4;
@@ -235,6 +254,24 @@ export function createEetQueue(options: EetQueueOptions): EetQueue {
       };
     }
     return { id, config };
+  }
+
+  /** Register choice and ingest for one input; shared by submit, batches and validation. */
+  function prepare(
+    input: unknown,
+    named: string | undefined,
+    readWarnings: readonly IngestWarning[] = [],
+  ):
+    | { ok: true; register: string; sale: NormalizedSale; warnings: IngestWarning[] }
+    | { ok: false; issues: SaleIssue[]; warnings: SaleWarning[] } {
+    const picked = pickRegister(named ?? inputRegister(input));
+    if ("code" in picked) return { ok: false, issues: [picked], warnings: [...readWarnings] };
+    const ingested = normalizeSale(input, contextFor(picked.config));
+    const warnings = [...readWarnings, ...ingested.warnings];
+    if (!ingested.ok) return { ok: false, issues: ingested.issues, warnings };
+    const conflict = registerConflict(ingested.sale, picked.id);
+    if (conflict !== undefined) return { ok: false, issues: [conflict], warnings };
+    return { ok: true, register: picked.id, sale: ingested.sale, warnings };
   }
 
   function track(id: string, run: () => Promise<SaleResult>): Promise<SaleResult> {
@@ -667,38 +704,57 @@ export function createEetQueue(options: EetQueueOptions): EetQueue {
 
   return {
     async submit(input, submitOptions = {}) {
-      const picked = pickRegister(submitOptions.register ?? inputRegister(input));
-      if ("code" in picked) return invalidResult([picked]);
-      const ingested = normalizeSale(input, contextFor(picked.config));
-      if (!ingested.ok) return invalidResult(ingested.issues, ingested.warnings);
-      const conflict = registerConflict(ingested.sale, picked.id);
-      if (conflict !== undefined) return invalidResult([conflict], ingested.warnings);
-      return enqueue(picked.id, ingested.sale, ingested.warnings, submitOptions);
+      const prepared = prepare(input, submitOptions.register);
+      if (!prepared.ok) return invalidResult(prepared.issues, prepared.warnings);
+      return enqueue(prepared.register, prepared.sale, prepared.warnings, submitOptions);
     },
 
     async submitBatch(source, format, batchOptions = {}) {
-      const picked = pickRegister(batchOptions.register);
-      if ("code" in picked) return { rows: [], warnings: [], issues: [picked] };
-      const parsed = parseSales(source, format, contextFor(picked.config));
+      const read = readSales(source, format);
       const rows: { row: number; result: SaleResult }[] = [];
-      for (const { row, result } of parsed.rows) {
-        if (!result.ok) {
-          rows.push({ row, result: invalidResult(result.issues, result.warnings) });
-          continue;
-        }
-        const conflict = registerConflict(result.sale, picked.id);
-        if (conflict !== undefined) {
-          rows.push({ row, result: invalidResult([conflict], result.warnings) });
+      for (const { row, input, warnings, issues } of read.rows) {
+        const prepared =
+          issues.length > 0
+            ? ({ ok: false, issues, warnings } as const)
+            : prepare(input, inputRegister(input) ?? batchOptions.register, warnings);
+        if (!prepared.ok) {
+          rows.push({ row, result: invalidResult(prepared.issues, prepared.warnings) });
           continue;
         }
         const key = batchOptions.idempotencyKey;
         const rowOptions = { ...batchOptions, idempotencyKey: key ? `${key}:${row}` : undefined };
-        rows.push({
-          row,
-          result: await enqueue(picked.id, result.sale, result.warnings, rowOptions),
-        });
+        const result = await enqueue(
+          prepared.register,
+          prepared.sale,
+          prepared.warnings,
+          rowOptions,
+        );
+        rows.push({ row, result });
       }
-      return { rows, warnings: parsed.warnings, issues: parsed.issues };
+      return { rows, warnings: read.warnings, issues: read.issues };
+    },
+
+    validateBatch(source, format, validateOptions = {}) {
+      const read = readSales(source, format);
+      const rows = read.rows.map(({ row, input, warnings, issues }) => {
+        const prepared =
+          issues.length > 0
+            ? ({ ok: false, issues, warnings } as const)
+            : prepare(input, inputRegister(input) ?? validateOptions.register, warnings);
+        const result: ValidationResult = prepared.ok
+          ? {
+              valid: true,
+              register: prepared.register,
+              data: prepared.sale.data,
+              overeni: prepared.sale.overeni || validateOptions.verify === true,
+              prvni_zaslani: prepared.sale.prvni_zaslani,
+              warnings: prepared.warnings,
+              issues: [],
+            }
+          : { valid: false, warnings: prepared.warnings, issues: prepared.issues };
+        return { row, result };
+      });
+      return { rows, warnings: read.warnings, issues: read.issues };
     },
 
     async get(id) {

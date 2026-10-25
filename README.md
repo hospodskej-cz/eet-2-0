@@ -9,7 +9,7 @@ HTTP službu s OpenAPI pro jiné jazyky nebo jako CLI.
 > An open-source gateway for Czech EET 2.0 sales registration: library, HTTP service and CLI.
 > Full English documentation will follow in phase 7.
 
-**Stav: fáze 4 z 7.**
+**Stav: fáze 5 z 7.**
 
 - Jádro (`packages/core`) umí načíst certifikát z `.p12`, podepsat a odeslat jednu tržbu
   a ověřit podpis potvrzení; ověřeno živě proti playgroundu.
@@ -18,7 +18,9 @@ HTTP službu s OpenAPI pro jiné jazyky nebo jako CLI.
 - Fronta (`packages/queue`) každou tržbu nejdřív uloží (SQLite v Bunu, Node i Deno), pak odešle
   a po výpadku bezpečně doposílá. Je idempotentní a nikdy nepošle tutéž tržbu dvakrát jako první
   odeslání.
-- HTTP API a CLI přijdou v dalších fázích.
+- HTTP API (`packages/server`) s OpenAPI 3.1, autentizací API klíčem a více pokladnami běží
+  jako Docker image nebo přímo v Bunu.
+- CLI přijde ve fázi 6.
 
 - [docs/SPEC_NOTES.md](docs/SPEC_NOTES.md): výtah z oficiální specifikace s odkazy na zdroje,
   rozdíly mezi zadáním a zdroji, otevřené otázky, živé ověření (§15)
@@ -30,6 +32,8 @@ HTTP službu s OpenAPI pro jiné jazyky nebo jako CLI.
   varování a chyb
 - [docs/QUEUE.md](docs/QUEUE.md): fronta, stavy, `SaleResult`, idempotence, události, úložiště
 - [docs/ADR-003-queue-retry-policy.md](docs/ADR-003-queue-retry-policy.md): pravidla doposílání
+- [docs/SERVER.md](docs/SERVER.md): HTTP API, konfigurace, Docker, logy;
+  [docs/openapi.json](docs/openapi.json): OpenAPI 3.1
 
 ## Vyzkoušej
 
@@ -103,6 +107,21 @@ const result = await queue.submit(
 // result.status: accepted | verification_ok | rejected | queued | uncertain | invalid
 ```
 
+Jako HTTP služba (pro PHP, Python, .NET, …; konfigurace podle
+[`examples/eet.config.example.yaml`](examples/eet.config.example.yaml)):
+
+```sh
+docker build -t eet-gateway .
+docker run -p 8080:8080 -e EET_API_KEYS=… \
+  -v ./eet.config.yaml:/etc/eet/eet.config.yaml:ro -v ./certs:/certs:ro -v eet-data:/data eet-gateway
+
+curl -H "Authorization: Bearer …" -H "Content-Type: application/json" \
+  -d '{"porad_cis":"2026/0001","dat_trzby":"2026-11-15T11:58:00+01:00","celk_trzba":"250,00"}' \
+  localhost:8080/v1/sales          # → {"status":"accepted","pok":"…", …}
+```
+
+Dokumentace API běží na `/docs`, OpenAPI na `/openapi.json`.
+
 ## Síťové požadavky
 
 Server, na kterém knihovnu provozuješ, musí mít HTTPS spojení (TLS 1.2+) na endpoint EET.
@@ -124,9 +143,11 @@ testy proti XSD.
 bun install
 bun run check             # biome + tsc + bun test
 bun run compat:node       # sestaví core, ingest a queue a ověří, že běží v Node
+bun run gen:openapi       # přegeneruje docs/openapi.json po změně API
+scripts/docker-smoke.sh   # ověří Docker image (docker build -t eet-gateway:dev . předtím)
 bun run spec:drift        # porovná oficiální dokumenty na eet.gov.cz se stavem v docs/sources
 bun run certs:playground  # stáhne sdílené testovací certifikáty do .cache/ (necommitují se)
-bun run test:live         # živé testy proti playgroundu (5 vymyšlených zpráv)
+bun run test:live         # živé testy proti playgroundu (6 vymyšlených zpráv)
 ```
 
 Živé testy proti playgroundu pouštěj lokálně z české sítě; z runnerů GitHubu je playground

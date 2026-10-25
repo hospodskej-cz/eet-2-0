@@ -563,3 +563,52 @@ describe("list", () => {
     ]);
   });
 });
+
+describe("batches across registers and validation", () => {
+  const twoRegisters = () => {
+    const transport = scripted();
+    const queue = createEetQueue({
+      store: createMemoryStore(),
+      registers: {
+        main: { transport, context: { register: DEFAULTS } },
+        second: { transport, context: { register: { ...DEFAULTS, id_pokl: "P2" } } },
+      },
+      now: () => T0,
+    });
+    return { queue, transport };
+  };
+  const ndjson = [
+    JSON.stringify(input("R-1", { register: "second" })),
+    JSON.stringify(input("R-2")),
+    "{broken",
+  ].join("\n");
+
+  test("each row picks its register; the option is the default", async () => {
+    const { queue, transport } = twoRegisters();
+    const batch = await queue.submitBatch(ndjson, "ndjson", { register: "main" });
+    expect(batch.rows.map((r) => [r.row, r.result.status, r.result.register])).toEqual([
+      [1, "accepted", "second"],
+      [2, "accepted", "main"],
+      [3, "invalid", undefined],
+    ]);
+    expect(transport.requests.map((r) => r.data.id_pokl)).toEqual(["P2", "P1"]);
+  });
+
+  test("validateBatch normalizes like submitBatch and stores nothing", async () => {
+    const { queue, transport } = twoRegisters();
+    const result = queue.validateBatch(ndjson, "ndjson", { register: "main", verify: true });
+    expect(result.rows.map((r) => [r.row, r.result.valid, r.result.register])).toEqual([
+      [1, true, "second"],
+      [2, true, "main"],
+      [3, false, undefined],
+    ]);
+    expect(result.rows[0]?.result).toMatchObject({
+      data: { id_pokl: "P2", porad_cis: "R-1" },
+      overeni: true,
+      prvni_zaslani: true,
+    });
+    expect(result.rows[2]?.result.issues).toMatchObject([{ code: "parse_error" }]);
+    expect((await queue.list()).items).toEqual([]);
+    expect(transport.requests).toHaveLength(0);
+  });
+});

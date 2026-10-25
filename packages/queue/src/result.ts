@@ -2,6 +2,7 @@
  * `SaleResult` — the one result shape shared by the library, the HTTP API and the CLI. The zod
  * schema is the source of truth so the API (phase 5) can publish it in OpenAPI unchanged.
  */
+import { EetReceiptDataSchema } from "@eet-gateway/core";
 import { z } from "zod";
 import type { SaleRecord } from "./store.ts";
 
@@ -66,6 +67,19 @@ export const SaleResultSchema = z.object({
 });
 
 export type SaleResult = z.infer<typeof SaleResultSchema>;
+
+/** Outcome of validating one sale without sending it (`validateBatch`, `POST /v1/validate`). */
+export const ValidationResultSchema = z.object({
+  valid: z.boolean(),
+  register: z.string().optional(),
+  data: EetReceiptDataSchema.optional().describe("The EET `<Data>` that would be sent."),
+  overeni: z.boolean().optional(),
+  prvni_zaslani: z.boolean().optional(),
+  warnings: z.array(SaleWarningSchema),
+  issues: z.array(SaleIssueSchema),
+});
+
+export type ValidationResult = z.infer<typeof ValidationResultSchema>;
 export type SaleWarning = z.infer<typeof SaleWarningSchema>;
 export type SaleIssue = z.infer<typeof SaleIssueSchema>;
 

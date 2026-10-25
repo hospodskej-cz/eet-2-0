@@ -1,0 +1,1914 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "EET Gateway API",
+    "version": "0.0.0",
+    "summary": "Sends sales to the Czech EET 2.0 (Finanční správa ČR) with a persistent queue.",
+    "license": {
+      "name": "MIT",
+      "identifier": "MIT"
+    }
+  },
+  "tags": [
+    {
+      "name": "Sales",
+      "description": "Submitting, validating and resending sales."
+    },
+    {
+      "name": "Queue",
+      "description": "What is waiting, uncertain or overdue."
+    },
+    {
+      "name": "Registers",
+      "description": "Configured registers and certificates."
+    },
+    {
+      "name": "System",
+      "description": "Health and documentation."
+    }
+  ],
+  "paths": {
+    "/v1/sales": {
+      "post": {
+        "operationId": "submitSale",
+        "summary": "Submit one sale",
+        "description": "Validates the sale, stores it and sends it to EET. Accepts JSON, XML (`<Data>` or `<Trzba>`) and form fields; field names and formats: docs/INGEST.md.",
+        "tags": ["Sales"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "query",
+            "description": "`sync` waits for the first attempt; `async` stores the sale, answers 202 and sends it in the background right away.",
+            "schema": {
+              "type": "string",
+              "enum": ["sync", "async"],
+              "default": "sync"
+            }
+          },
+          {
+            "name": "verify",
+            "in": "query",
+            "description": "Verification mode (`overeni`): EET checks the message and registers nothing.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "register",
+            "in": "query",
+            "description": "Register id; may also come from the input field `register`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Repeating the request with the same key returns the stored result instead of sending again.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "One sale.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaleInput"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/SaleInput"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SaleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "EET answered: `accepted`, `verification_ok` or `rejected` (see `status`).",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "`true` when the sale was already queued and the stored result is returned.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Location": {
+                "description": "URL of the queued record.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleResult"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Not settled yet: `queued` or `uncertain`; poll the Location.",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "`true` when the sale was already queued and the stored result is returned.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Location": {
+                "description": "URL of the queued record.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong API key (`Authorization: Bearer …`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key already used for another sale.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleResult"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Content-Type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid`: see `issues`; nothing was sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sales/batch": {
+      "post": {
+        "operationId": "submitBatch",
+        "summary": "Submit a batch of sales",
+        "description": "Meant for resending after an outage and for migration; sales should be sent as they happen (metodika 1.2). Every row is stored and sent on its own.",
+        "tags": ["Sales"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "query",
+            "description": "`sync` waits for the first attempt; `async` stores the sale, answers 202 and sends it in the background right away.",
+            "schema": {
+              "type": "string",
+              "enum": ["sync", "async"],
+              "default": "async"
+            }
+          },
+          {
+            "name": "verify",
+            "in": "query",
+            "description": "Verification mode (`overeni`): EET checks the message and registers nothing.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "register",
+            "in": "query",
+            "description": "Register id; may also come from the input field `register`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Repeating the request with the same key never registers a row twice; each row is keyed `<key>:<row>`.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Sales, one per row. The format follows Content-Type; CSV may be UTF-8 or Windows-1250.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SaleInput"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SaleInput"
+                    }
+                  }
+                ]
+              }
+            },
+            "application/x-ndjson": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/csv": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "One result per row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong API key (`Authorization: Bearer …`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Content-Type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The source could not be read at all.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sales/{id}": {
+      "get": {
+        "operationId": "getSale",
+        "summary": "Current state of a sale",
+        "tags": ["Sales"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Record id from SaleResult.id.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong API key (`Authorization: Bearer …`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sales/{id}/attempts": {
+      "get": {
+        "operationId": "getSaleAttempts",
+        "summary": "Attempts to send a sale",
+        "description": "Every message sent for the sale, with `uuid_zpravy` and `dat_odesl`.",
+        "tags": ["Sales"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Record id from SaleResult.id.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attempts in order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong API key (`Authorization: Bearer …`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sales/{id}/retry": {
+      "post": {
+        "operationId": "retrySale",
+        "summary": "Send a stored sale again now",
+        "description": "For `queued`, `uncertain` and `rejected` records (e.g. after fixing the certificate). Always `prvni_zaslani=false` after the first attempt.",
+        "tags": ["Sales"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Record id from SaleResult.id.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EET answered: `accepted`, `verification_ok` or `rejected` (see `status`).",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "`true` when the sale was already queued and the stored result is returned.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Location": {
+                "description": "URL of the queued record.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleResult"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Not settled yet: `queued` or `uncertain`; poll the Location.",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "`true` when the sale was already queued and the stored result is returned.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Location": {
+                "description": "URL of the queued record.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong API key (`Authorization: Bearer …`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Final record (`not_retryable`), being sent (`in_progress`) or register gone.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/queue": {
+      "get": {
+        "operationId": "listQueue",
+        "summary": "Queue overview",
+        "tags": ["Queue"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Comma-separated: accepted, verification_ok, rejected, queued, uncertain, invalid.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "register",
+            "in": "query",
+            "description": "Register id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "`dat_trzby` from (inclusive), ISO 8601.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "`dat_trzby` to (exclusive), ISO 8601.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "overdue",
+            "in": "query",
+            "description": "Only sales without POK 48 h after they happened (ZoET §20), or only the others.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Page size.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "`nextCursor` of the previous page.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueuePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad filter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong API key (`Authorization: Bearer …`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/registers": {
+      "get": {
+        "operationId": "listRegisters",
+        "summary": "Registers and their certificates",
+        "description": "Certificate validity, including a warning 21 days before expiry.",
+        "tags": ["Registers"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configured registers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong API key (`Authorization: Bearer …`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/validate": {
+      "post": {
+        "operationId": "validateSales",
+        "summary": "Validate sales without sending",
+        "description": "Runs the same ingest and register defaults as submitting; nothing is stored or sent.",
+        "tags": ["Sales"],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "verify",
+            "in": "query",
+            "description": "Verification mode (`overeni`): EET checks the message and registers nothing.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "register",
+            "in": "query",
+            "description": "Register id; may also come from the input field `register`.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "One sale or a batch. The format follows Content-Type; CSV may be UTF-8 or Windows-1250.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SaleInput"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SaleInput"
+                    }
+                  }
+                ]
+              }
+            },
+            "application/x-ndjson": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/csv": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "One result per row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationBatch"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong API key (`Authorization: Bearer …`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Content-Type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The source could not be read at all.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationBatch"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Liveness and readiness",
+        "tags": ["System"],
+        "parameters": [
+          {
+            "name": "eet",
+            "in": "query",
+            "description": "Also check that every EET endpoint is reachable (OPTIONS preflight only).",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Healthy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database or (with ?eet=true) EET unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "operationId": "openapi",
+        "summary": "This OpenAPI document",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "OpenAPI 3.1."
+          }
+        }
+      }
+    },
+    "/docs": {
+      "get": {
+        "operationId": "docs",
+        "summary": "API reference (HTML)",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Interactive documentation."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "An API key from the server configuration (apiKeys, EET_API_KEYS)."
+      }
+    },
+    "schemas": {
+      "SaleInput": {
+        "type": "object",
+        "properties": {
+          "eic_popl": {
+            "type": "string"
+          },
+          "eic_poverujiciho": {
+            "type": "string"
+          },
+          "povereni_vice_popl": {
+            "type": ["boolean", "string"]
+          },
+          "id_jednotky": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            ]
+          },
+          "id_pokl": {
+            "type": "string"
+          },
+          "porad_cis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            ]
+          },
+          "dat_trzby": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            ]
+          },
+          "celk_trzba": {
+            "type": ["string", "number"]
+          },
+          "urceno_cerp_zuct": {
+            "type": ["string", "number"]
+          },
+          "cerp_zuct": {
+            "type": ["string", "number"]
+          },
+          "overeni": {
+            "type": ["boolean", "string"]
+          },
+          "prvni_zaslani": {
+            "type": ["boolean", "string"]
+          },
+          "register": {
+            "type": "string"
+          }
+        },
+        "required": ["dat_trzby", "celk_trzba"],
+        "additionalProperties": {}
+      },
+      "SaleResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Record id in the queue; absent when nothing was stored.",
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["accepted", "verification_ok", "rejected", "queued", "uncertain", "invalid"]
+          },
+          "register": {
+            "type": "string"
+          },
+          "pok": {
+            "description": "Fiscal identification code from EET (accepted only).",
+            "type": "string"
+          },
+          "uuid": {
+            "description": "`uuid_zpravy` of the last attempt.",
+            "type": "string"
+          },
+          "test": {
+            "description": "EET answered from the playground.",
+            "type": "boolean"
+          },
+          "code": {
+            "description": "EET error code of the last answer (`kod`).",
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "message": {
+            "type": "string"
+          },
+          "reason": {
+            "description": "Why the last attempt has no EET answer: timeout, network, interrupted, …",
+            "type": "string"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "message": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string",
+                  "enum": ["eet", "ingest", "queue"]
+                },
+                "field": {
+                  "type": "string"
+                }
+              },
+              "required": ["code", "message", "source"],
+              "additionalProperties": false
+            }
+          },
+          "issues": {
+            "description": "Why the sale is invalid.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "field": {
+                  "type": "string"
+                }
+              },
+              "required": ["code", "message"],
+              "additionalProperties": false
+            }
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "nextAttemptAt": {
+            "description": "Next automatic attempt (ISO 8601 UTC).",
+            "type": "string"
+          },
+          "overdue": {
+            "description": "No POK 48 hours after the sale (ZoET §20); absent in verification mode.",
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "deadlineAt": {
+            "type": "string"
+          },
+          "httpStatus": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "globalTransactionId": {
+            "type": "string"
+          },
+          "rawRequest": {
+            "description": "Debug only; never stored, signatures redacted.",
+            "type": "string"
+          },
+          "rawResponse": {
+            "description": "Debug only; never stored.",
+            "type": "string"
+          }
+        },
+        "required": ["status", "warnings", "attempts"],
+        "additionalProperties": false
+      },
+      "BatchResult": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
+                  "description": "JSON array: position from 1; NDJSON, CSV, XML: line number."
+                },
+                "result": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "Record id in the queue; absent when nothing was stored.",
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "accepted",
+                        "verification_ok",
+                        "rejected",
+                        "queued",
+                        "uncertain",
+                        "invalid"
+                      ]
+                    },
+                    "register": {
+                      "type": "string"
+                    },
+                    "pok": {
+                      "description": "Fiscal identification code from EET (accepted only).",
+                      "type": "string"
+                    },
+                    "uuid": {
+                      "description": "`uuid_zpravy` of the last attempt.",
+                      "type": "string"
+                    },
+                    "test": {
+                      "description": "EET answered from the playground.",
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "description": "EET error code of the last answer (`kod`).",
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "reason": {
+                      "description": "Why the last attempt has no EET answer: timeout, network, interrupted, …",
+                      "type": "string"
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": ["eet", "ingest", "queue"]
+                          },
+                          "field": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["code", "message", "source"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "issues": {
+                      "description": "Why the sale is invalid.",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "field": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["code", "message"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "attempts": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "nextAttemptAt": {
+                      "description": "Next automatic attempt (ISO 8601 UTC).",
+                      "type": "string"
+                    },
+                    "overdue": {
+                      "description": "No POK 48 hours after the sale (ZoET §20); absent in verification mode.",
+                      "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "deadlineAt": {
+                      "type": "string"
+                    },
+                    "httpStatus": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "globalTransactionId": {
+                      "type": "string"
+                    },
+                    "rawRequest": {
+                      "description": "Debug only; never stored, signatures redacted.",
+                      "type": "string"
+                    },
+                    "rawResponse": {
+                      "description": "Debug only; never stored.",
+                      "type": "string"
+                    }
+                  },
+                  "required": ["status", "warnings", "attempts"],
+                  "additionalProperties": false
+                }
+              },
+              "required": ["row", "result"],
+              "additionalProperties": false
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "message": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string",
+                  "enum": ["eet", "ingest", "queue"]
+                },
+                "field": {
+                  "type": "string"
+                }
+              },
+              "required": ["code", "message", "source"],
+              "additionalProperties": false
+            },
+            "description": "About the whole source, e.g. CP1250 decoding."
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "field": {
+                  "type": "string"
+                }
+              },
+              "required": ["code", "message"],
+              "additionalProperties": false
+            },
+            "description": "Non-empty when the source could not be read."
+          }
+        },
+        "required": ["rows", "warnings", "issues"],
+        "additionalProperties": false
+      },
+      "ValidationBatch": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
+                  "description": "JSON array: position from 1; NDJSON, CSV, XML: line number."
+                },
+                "result": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean"
+                    },
+                    "register": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "description": "The EET `<Data>` that would be sent.",
+                      "type": "object",
+                      "properties": {
+                        "eic_popl": {
+                          "type": "string",
+                          "pattern": "^CZ[0-9]{8,10}$"
+                        },
+                        "eic_poverujiciho": {
+                          "type": "string",
+                          "pattern": "^CZ[0-9]{8,10}$"
+                        },
+                        "povereni_vice_popl": {
+                          "type": "boolean"
+                        },
+                        "id_jednotky": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,8}$"
+                        },
+                        "id_pokl": {
+                          "type": "string",
+                          "pattern": "^[0-9a-zA-Z.,:;/#\\-_ ]{1,20}$"
+                        },
+                        "porad_cis": {
+                          "type": "string",
+                          "pattern": "^[0-9a-zA-Z.,:;/#\\-_ ]{1,25}$"
+                        },
+                        "dat_trzby": {
+                          "type": "string"
+                        },
+                        "celk_trzba": {
+                          "type": "string",
+                          "pattern": "^((0|-?[1-9]\\d{0,7})\\.\\d\\d|-0\\.(0[1-9]|[1-9]\\d))$"
+                        },
+                        "urceno_cerp_zuct": {
+                          "type": "string",
+                          "pattern": "^((0|-?[1-9]\\d{0,7})\\.\\d\\d|-0\\.(0[1-9]|[1-9]\\d))$"
+                        },
+                        "cerp_zuct": {
+                          "type": "string",
+                          "pattern": "^((0|-?[1-9]\\d{0,7})\\.\\d\\d|-0\\.(0[1-9]|[1-9]\\d))$"
+                        }
+                      },
+                      "required": [
+                        "eic_popl",
+                        "id_jednotky",
+                        "id_pokl",
+                        "porad_cis",
+                        "dat_trzby",
+                        "celk_trzba"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "overeni": {
+                      "type": "boolean"
+                    },
+                    "prvni_zaslani": {
+                      "type": "boolean"
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": ["eet", "ingest", "queue"]
+                          },
+                          "field": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["code", "message", "source"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "field": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["code", "message"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["valid", "warnings", "issues"],
+                  "additionalProperties": false
+                }
+              },
+              "required": ["row", "result"],
+              "additionalProperties": false
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "message": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string",
+                  "enum": ["eet", "ingest", "queue"]
+                },
+                "field": {
+                  "type": "string"
+                }
+              },
+              "required": ["code", "message", "source"],
+              "additionalProperties": false
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "field": {
+                  "type": "string"
+                }
+              },
+              "required": ["code", "message"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["rows", "warnings", "issues"],
+        "additionalProperties": false
+      },
+      "AttemptList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "n": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "uuid_zpravy": {
+                  "type": "string"
+                },
+                "dat_odesl": {
+                  "type": "string"
+                },
+                "prvni_zaslani": {
+                  "type": "boolean"
+                },
+                "overeni": {
+                  "type": "boolean"
+                },
+                "environment": {
+                  "type": "string",
+                  "enum": ["playground", "production"]
+                },
+                "endpoint": {
+                  "type": "string"
+                },
+                "startedAt": {
+                  "type": "string"
+                },
+                "finishedAt": {
+                  "description": "Absent while the attempt is running.",
+                  "type": "string"
+                },
+                "outcome": {
+                  "type": "string",
+                  "enum": [
+                    "accepted",
+                    "verification_ok",
+                    "rejected",
+                    "not_sent",
+                    "uncertain",
+                    "interrupted"
+                  ]
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "message": {
+                  "type": "string"
+                },
+                "pok": {
+                  "type": "string"
+                },
+                "httpStatus": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "globalTransactionId": {
+                  "type": "string"
+                },
+                "durationMs": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "n",
+                "uuid_zpravy",
+                "dat_odesl",
+                "prvni_zaslani",
+                "overeni",
+                "environment",
+                "endpoint",
+                "startedAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["items"],
+        "additionalProperties": false
+      },
+      "QueuePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "description": "Record id in the queue; absent when nothing was stored.",
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "accepted",
+                    "verification_ok",
+                    "rejected",
+                    "queued",
+                    "uncertain",
+                    "invalid"
+                  ]
+                },
+                "register": {
+                  "type": "string"
+                },
+                "pok": {
+                  "description": "Fiscal identification code from EET (accepted only).",
+                  "type": "string"
+                },
+                "uuid": {
+                  "description": "`uuid_zpravy` of the last attempt.",
+                  "type": "string"
+                },
+                "test": {
+                  "description": "EET answered from the playground.",
+                  "type": "boolean"
+                },
+                "code": {
+                  "description": "EET error code of the last answer (`kod`).",
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "message": {
+                  "type": "string"
+                },
+                "reason": {
+                  "description": "Why the last attempt has no EET answer: timeout, network, interrupted, …",
+                  "type": "string"
+                },
+                "warnings": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "message": {
+                        "type": "string"
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": ["eet", "ingest", "queue"]
+                      },
+                      "field": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["code", "message", "source"],
+                    "additionalProperties": false
+                  }
+                },
+                "issues": {
+                  "description": "Why the sale is invalid.",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "string"
+                      },
+                      "message": {
+                        "type": "string"
+                      },
+                      "field": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["code", "message"],
+                    "additionalProperties": false
+                  }
+                },
+                "attempts": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "nextAttemptAt": {
+                  "description": "Next automatic attempt (ISO 8601 UTC).",
+                  "type": "string"
+                },
+                "overdue": {
+                  "description": "No POK 48 hours after the sale (ZoET §20); absent in verification mode.",
+                  "type": "boolean"
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "deadlineAt": {
+                  "type": "string"
+                },
+                "httpStatus": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "globalTransactionId": {
+                  "type": "string"
+                },
+                "rawRequest": {
+                  "description": "Debug only; never stored, signatures redacted.",
+                  "type": "string"
+                },
+                "rawResponse": {
+                  "description": "Debug only; never stored.",
+                  "type": "string"
+                }
+              },
+              "required": ["status", "warnings", "attempts"],
+              "additionalProperties": false
+            }
+          },
+          "nextCursor": {
+            "description": "Pass as `cursor` for the next page.",
+            "type": "string"
+          }
+        },
+        "required": ["items"],
+        "additionalProperties": false
+      },
+      "RegisterList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "environment": {
+                  "type": "string",
+                  "enum": ["playground", "production"]
+                },
+                "endpoint": {
+                  "type": "string"
+                },
+                "defaults": {
+                  "type": "object",
+                  "properties": {
+                    "eic_popl": {
+                      "type": "string"
+                    },
+                    "id_jednotky": {
+                      "type": "string"
+                    },
+                    "id_pokl": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "timeZone": {
+                  "type": "string"
+                },
+                "certificates": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "eic": {
+                        "type": "string"
+                      },
+                      "subject": {
+                        "type": "string"
+                      },
+                      "issuer": {
+                        "type": "string"
+                      },
+                      "serialNumber": {
+                        "type": "string"
+                      },
+                      "fingerprintSha256": {
+                        "type": "string"
+                      },
+                      "notBefore": {
+                        "type": "string"
+                      },
+                      "notAfter": {
+                        "type": "string"
+                      },
+                      "daysLeft": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991,
+                        "description": "Whole days until notAfter; negative once expired."
+                      },
+                      "active": {
+                        "type": "boolean",
+                        "description": "Used for sending right now."
+                      },
+                      "expiresSoon": {
+                        "type": "boolean",
+                        "description": "Valid, but expires within 21 days."
+                      },
+                      "expired": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "eic",
+                      "subject",
+                      "issuer",
+                      "serialNumber",
+                      "fingerprintSha256",
+                      "notBefore",
+                      "notAfter",
+                      "daysLeft",
+                      "active",
+                      "expiresSoon",
+                      "expired"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["id", "environment", "endpoint", "defaults", "timeZone", "certificates"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["items"],
+        "additionalProperties": false
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok", "degraded"]
+          },
+          "version": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string",
+            "enum": ["ok", "error"]
+          },
+          "eet": {
+            "description": "Only with ?eet=true: a CORS preflight to each EET endpoint, cached for 60 s.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "endpoint": {
+                  "type": "string"
+                },
+                "reachable": {
+                  "type": "boolean"
+                },
+                "httpStatus": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "durationMs": {
+                  "type": "number"
+                },
+                "error": {
+                  "type": "string"
+                },
+                "checkedAt": {
+                  "type": "string"
+                }
+              },
+              "required": ["endpoint", "reachable", "durationMs", "checkedAt"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["status", "version", "database"],
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Stable machine-readable code, e.g. unauthorized, not_found."
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": ["code", "message"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["error"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

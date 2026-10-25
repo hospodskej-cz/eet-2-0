@@ -18,6 +18,7 @@ export {
 } from "./policy.ts";
 export {
   type BatchSubmitResult,
+  type BatchValidationResult,
   createEetQueue,
   type EetQueue,
   type EetQueueOptions,
@@ -27,6 +28,7 @@ export {
   type SubmitOptions,
 } from "./queue.ts";
 export {
+  invalidResult,
   isOverdue,
   SALE_STATUSES,
   type SaleIssue,
@@ -36,6 +38,8 @@ export {
   type SaleStatus,
   type SaleWarning,
   SaleWarningSchema,
+  type ValidationResult,
+  ValidationResultSchema,
 } from "./result.ts";
 export {
   createSqliteStore,
