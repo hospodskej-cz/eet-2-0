@@ -1,0 +1,5 @@
+<!-- Metodika v1.0 kap. 6, resend: new UUID and dat_odesl, prvni_zaslani=0, same Data -->
+<tns:Trzba xmlns:tns="http://fs.gov.cz/eet/schema/v4">
+  <tns:Hlavicka uuid_zpravy="e23e5a5a-08d7-4a08-844d-2b6c6b60621d" dat_odesl="2027-04-26T09:30:40+02:00" prvni_zaslani="0" />
+  <tns:Data eic_popl="CZ00000019" id_jednotky="282" id_pokl="25" porad_cis="5616" dat_trzby="2027-04-25T15:30:40+02:00" celk_trzba="350.00" />
+</tns:Trzba>

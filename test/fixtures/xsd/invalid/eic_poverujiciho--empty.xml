@@ -1,0 +1,5 @@
+<!-- Rozhraní §3.3.2: empty attributes are forbidden -->
+<tns:Trzba xmlns:tns="http://fs.gov.cz/eet/schema/v4">
+  <tns:Hlavicka uuid_zpravy="e23e5a5a-08d7-4a08-844d-2b6c6b60621d" dat_odesl="2027-01-08T21:19:40+01:00" prvni_zaslani="true" />
+  <tns:Data eic_popl="CZ8551015704" id_jednotky="181" id_pokl="00/2535/CN58" porad_cis="0/2482/IE25" dat_trzby="2027-01-07T22:01:00+01:00" celk_trzba="87988.00" eic_poverujiciho="" />
+</tns:Trzba>

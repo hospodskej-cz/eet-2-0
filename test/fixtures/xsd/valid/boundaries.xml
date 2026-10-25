@@ -1,0 +1,5 @@
+<!-- Boundary values: amount range, 9-digit id_jednotky, full-length string20/25 with every allowed special character, UTC 'Z' -->
+<tns:Trzba xmlns:tns="http://fs.gov.cz/eet/schema/v4">
+  <tns:Hlavicka uuid_zpravy="00000000-0000-1000-8000-000000000000" dat_odesl="2027-01-08T20:19:40Z" prvni_zaslani="false" overeni="false" />
+  <tns:Data eic_popl="CZ1234567890" id_jednotky="999999999" id_pokl="aZ09.,:;/#-_ aZ09.,:" porad_cis="aZ09.,:;/#-_ aZ09.,:;/#-_" dat_trzby="2027-01-08T20:19:40Z" celk_trzba="-99999999.99" urceno_cerp_zuct="99999999.99" cerp_zuct="-0.01" />
+</tns:Trzba>

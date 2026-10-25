@@ -1,0 +1,27 @@
+{
+  "name": "eet-gateway",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "lint": "biome ci .",
+    "format": "biome check --write .",
+    "typecheck": "tsc -p packages/core/tsconfig.json && tsc -p packages/ingest/tsconfig.json && tsc -p tsconfig.json",
+    "test": "bun test",
+    "check": "bun run lint && bun run typecheck && bun test",
+    "build:core": "bun build packages/core/src/index.ts --outdir packages/core/dist --target node --format esm",
+    "compat:node": "bun run build:core && node packages/core/test/compat/smoke.mjs",
+    "spec:drift": "bun scripts/check-spec-drift.ts",
+    "certs:playground": "bun scripts/fetch-playground-certs.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.3",
+    "@eet-gateway/core": "workspace:*",
+    "@types/bun": "1.4.4",
+    "typescript": "7.0.2"
+  }
+}

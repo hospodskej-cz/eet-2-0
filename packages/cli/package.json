@@ -1,0 +1,17 @@
+{
+  "name": "@eet-gateway/cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Command-line interface over the same core.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@eet-gateway/core": "workspace:*",
+    "@eet-gateway/ingest": "workspace:*",
+    "@eet-gateway/queue": "workspace:*",
+    "@eet-gateway/server": "workspace:*"
+  }
+}

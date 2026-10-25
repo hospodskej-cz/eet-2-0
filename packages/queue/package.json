@@ -1,0 +1,14 @@
+{
+  "name": "@eet-gateway/queue",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Persistent outbound queue with safe resending.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@eet-gateway/core": "workspace:*"
+  }
+}

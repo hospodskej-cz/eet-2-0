@@ -1,0 +1,17 @@
+{
+  "name": "@eet-gateway/ingest",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Input parsers and normalization into canonical EET receipt data.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "dependencies": {
+    "@eet-gateway/core": "workspace:*"
+  }
+}

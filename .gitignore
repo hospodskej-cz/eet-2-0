@@ -1,0 +1,21 @@
+node_modules/
+dist/
+coverage/
+.cache/
+
+# Secrets — never commit certificates, keys or local configuration.
+*.p12
+*.pfx
+*.pem
+*.key
+.env
+.env.*
+eet.config.yaml
+!examples/**/eet.config.example.yaml
+
+# Local queue databases
+*.sqlite
+*.sqlite-*
+*.db
+
+.DS_Store

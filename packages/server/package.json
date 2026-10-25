@@ -1,0 +1,16 @@
+{
+  "name": "@eet-gateway/server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "HTTP API (v1) with OpenAPI 3.1.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@eet-gateway/core": "workspace:*",
+    "@eet-gateway/ingest": "workspace:*",
+    "@eet-gateway/queue": "workspace:*"
+  }
+}
