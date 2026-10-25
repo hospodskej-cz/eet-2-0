@@ -90,7 +90,7 @@ await queue.stop(); // při ukončení aplikace: počká na rozběhnuté pokusy
 
 ## `SaleResult`
 
-`id`, `status`, `register`, `pok`, `uuid` (`uuid_zpravy` posledního pokusu), `test` (odpověď
+`id`, `status`, `register`, `data` (uložená `<Data>`, která každý pokus posílá), `pok`, `uuid` (`uuid_zpravy` posledního pokusu), `test` (odpověď
 z playgroundu), `code` a `message` (poslední odpověď EET), `reason`, `warnings`
 (`{ code, message, source: "eet" | "ingest" | "queue", field? }`), `issues` (u `invalid`),
 `attempts`, `nextAttemptAt`, `overdue` (48 h bez POK, ZoET §20; v ověřovacím módu chybí),

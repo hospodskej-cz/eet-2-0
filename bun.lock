@@ -14,6 +14,9 @@
     "packages/cli": {
       "name": "@eet-gateway/cli",
       "version": "0.0.0",
+      "bin": {
+        "eet": "./src/main.ts",
+      },
       "dependencies": {
         "@eet-gateway/core": "workspace:*",
         "@eet-gateway/ingest": "workspace:*",

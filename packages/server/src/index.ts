@@ -15,11 +15,13 @@ export {
   registerEnvId,
   type ServerConfig,
 } from "./config.ts";
+export { createLogger, type LogFields, type Logger, type LogLevel, logQueueEvent } from "./log.ts";
 export { buildOpenApi, ROUTES, type RouteDoc } from "./openapi.ts";
 export {
   activeCertificate,
   type CertificateStatus,
   CertificateStatusSchema,
+  certificateStatus,
   EXPIRY_WARNING_DAYS,
   type ExpiryNotice,
   expiryNotices,

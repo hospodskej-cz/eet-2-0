@@ -197,23 +197,32 @@ export function registerStatus(register: LoadedRegister, now: Date): RegisterSta
         .map(([k, v]) => [k, String(v)]),
     ),
     timeZone: register.context.timeZone ?? "",
-    certificates: register.certificates.map(({ info }, index) => {
-      const daysLeft = Math.floor((info.notAfter.getTime() - now.getTime()) / DAY_MS);
-      const expired = info.notAfter < now;
-      return {
-        eic: info.eic,
-        subject: info.subjectCommonName,
-        issuer: info.issuerCommonName,
-        serialNumber: info.serialNumber,
-        fingerprintSha256: info.fingerprintSha256,
-        notBefore: info.notBefore.toISOString(),
-        notAfter: info.notAfter.toISOString(),
-        daysLeft,
-        active: index === active,
-        expiresSoon: !expired && daysLeft < EXPIRY_WARNING_DAYS,
-        expired,
-      };
-    }),
+    certificates: register.certificates.map(({ info }, index) =>
+      certificateStatus(info, now, index === active),
+    ),
+  };
+}
+
+/** Validity of one certificate at `now`; `active` = it signs right now. */
+export function certificateStatus(
+  info: CertificateInfo,
+  now: Date,
+  active: boolean,
+): CertificateStatus {
+  const daysLeft = Math.floor((info.notAfter.getTime() - now.getTime()) / DAY_MS);
+  const expired = info.notAfter < now;
+  return {
+    eic: info.eic,
+    subject: info.subjectCommonName,
+    issuer: info.issuerCommonName,
+    serialNumber: info.serialNumber,
+    fingerprintSha256: info.fingerprintSha256,
+    notBefore: info.notBefore.toISOString(),
+    notAfter: info.notAfter.toISOString(),
+    daysLeft,
+    active,
+    expiresSoon: !expired && daysLeft < EXPIRY_WARNING_DAYS,
+    expired,
   };
 }
 

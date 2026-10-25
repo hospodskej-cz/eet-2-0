@@ -41,6 +41,9 @@ export const SaleResultSchema = z.object({
   id: z.string().optional().describe("Record id in the queue; absent when nothing was stored."),
   status: z.enum(SALE_STATUSES),
   register: z.string().optional(),
+  data: EetReceiptDataSchema.optional().describe(
+    "The EET `<Data>` stored for the sale; every attempt sends exactly this.",
+  ),
   pok: z.string().optional().describe("Fiscal identification code from EET (accepted only)."),
   uuid: z.string().optional().describe("`uuid_zpravy` of the last attempt."),
   test: z.boolean().optional().describe("EET answered from the playground."),
@@ -105,6 +108,7 @@ export function recordResult(record: SaleRecord, now: number): SaleResult {
     id: record.id,
     status: record.status,
     register: record.register,
+    data: record.data,
     pok: record.pok,
     uuid: record.uuid,
     test: record.test,

@@ -22,3 +22,6 @@ eet.config.yaml
 
 # Public trust anchors (CA certificates) are vendored on purpose.
 !spec/ca/**
+
+# Temporary files bun build --compile may leave behind
+*.bun-build

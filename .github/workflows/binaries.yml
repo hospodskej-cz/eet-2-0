@@ -1,0 +1,64 @@
+name: Binaries
+
+# All four targets are cross-compiled on Linux for every change; the Linux x64 binary is run
+# through scripts/binary-smoke.sh. macOS and Windows runners cost more on a private repository,
+# so their smoke runs only on demand (and for releases, phase 7).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: binaries-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build eet (4 targets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - run: bun run build:binaries
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: eet-binaries
+          path: dist/bin/
+          retention-days: 7
+
+  smoke:
+    name: Smoke ${{ matrix.binary }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '[{"os":"ubuntu-latest","binary":"eet-linux-x64"},{"os":"macos-latest","binary":"eet-darwin-arm64"},{"os":"windows-latest","binary":"eet-windows-x64.exe"}]' || '[{"os":"ubuntu-latest","binary":"eet-linux-x64"}]') }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - name: Cache playground certificates (SHA-256 pinned in sources.json)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/playground
+          key: playground-certs-${{ hashFiles('docs/sources/sources.json') }}
+      - run: bun install --frozen-lockfile
+      - run: bun run certs:playground
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: eet-binaries
+          path: dist/bin
+      - name: Run the binary through its commands (sends nothing to EET)
+        shell: bash
+        run: |
+          chmod +x "dist/bin/${{ matrix.binary }}"
+          scripts/binary-smoke.sh "dist/bin/${{ matrix.binary }}"

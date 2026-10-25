@@ -10,6 +10,7 @@ vygenerovat. Za API stojí fronta ([QUEUE](QUEUE.md)) a ingest ([INGEST](INGEST.
 ```sh
 bun packages/server/src/main.ts --config eet.config.yaml   # nebo EET_CONFIG; výchozí ./eet.config.yaml
 bun packages/server/src/main.ts --dev                      # bez API klíčů, jen playground
+eet serve --config eet.config.yaml                         # totéž přes CLI (docs/CLI.md)
 ```
 
 | Exit kód | Význam                                                                                    |

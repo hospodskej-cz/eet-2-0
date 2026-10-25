@@ -9,7 +9,7 @@ HTTP službu s OpenAPI pro jiné jazyky nebo jako CLI.
 > An open-source gateway for Czech EET 2.0 sales registration: library, HTTP service and CLI.
 > Full English documentation will follow in phase 7.
 
-**Stav: fáze 5 z 7.**
+**Stav: fáze 6 z 7.**
 
 - Jádro (`packages/core`) umí načíst certifikát z `.p12`, podepsat a odeslat jednu tržbu
   a ověřit podpis potvrzení; ověřeno živě proti playgroundu.
@@ -20,7 +20,8 @@ HTTP službu s OpenAPI pro jiné jazyky nebo jako CLI.
   odeslání.
 - HTTP API (`packages/server`) s OpenAPI 3.1, autentizací API klíčem a více pokladnami běží
   jako Docker image nebo přímo v Bunu.
-- CLI přijde ve fázi 6.
+- CLI `eet` (`packages/cli`) umí odeslat a zkontrolovat soubor, spravovat frontu, zkontrolovat
+  certifikát a spustit službu; jde sestavit jako samostatná binárka pro Linux, macOS a Windows.
 
 - [docs/SPEC_NOTES.md](docs/SPEC_NOTES.md): výtah z oficiální specifikace s odkazy na zdroje,
   rozdíly mezi zadáním a zdroji, otevřené otázky, živé ověření (§15)
@@ -32,6 +33,7 @@ HTTP službu s OpenAPI pro jiné jazyky nebo jako CLI.
   varování a chyb
 - [docs/QUEUE.md](docs/QUEUE.md): fronta, stavy, `SaleResult`, idempotence, události, úložiště
 - [docs/ADR-003-queue-retry-policy.md](docs/ADR-003-queue-retry-policy.md): pravidla doposílání
+- [docs/CLI.md](docs/CLI.md): příkazy `eet`, exit kódy, binárky
 - [docs/SERVER.md](docs/SERVER.md): HTTP API, konfigurace, Docker, logy;
   [docs/openapi.json](docs/openapi.json): OpenAPI 3.1
 
@@ -122,6 +124,15 @@ curl -H "Authorization: Bearer …" -H "Content-Type: application/json" \
 
 Dokumentace API běží na `/docs`, OpenAPI na `/openapi.json`.
 
+Z příkazové řádky (stejná konfigurace a fronta):
+
+```sh
+bun run build:binaries native                       # → dist/bin/eet-<os>-<arch>
+eet send trzby.csv --config eet.config.yaml         # odešle soubor, vypíše výsledek řádek po řádku
+eet queue list --status queued,uncertain            # co čeká na doposlání
+eet cert inspect kasa.p12 --password-file heslo.txt # EIČ, prostředí, platnost
+```
+
 ## Síťové požadavky
 
 Server, na kterém knihovnu provozuješ, musí mít HTTPS spojení (TLS 1.2+) na endpoint EET.
@@ -145,9 +156,11 @@ bun run check             # biome + tsc + bun test
 bun run compat:node       # sestaví core, ingest a queue a ověří, že běží v Node
 bun run gen:openapi       # přegeneruje docs/openapi.json po změně API
 scripts/docker-smoke.sh   # ověří Docker image (docker build -t eet-gateway:dev . předtím)
+bun run build:binaries    # samostatné binárky eet do dist/bin/ (native = jen pro tento stroj)
+scripts/binary-smoke.sh dist/bin/eet-darwin-arm64   # ověří binárku bez odeslání do EET
 bun run spec:drift        # porovná oficiální dokumenty na eet.gov.cz se stavem v docs/sources
 bun run certs:playground  # stáhne sdílené testovací certifikáty do .cache/ (necommitují se)
-bun run test:live         # živé testy proti playgroundu (6 vymyšlených zpráv)
+bun run test:live         # živé testy proti playgroundu (7 vymyšlených zpráv)
 ```
 
 Živé testy proti playgroundu pouštěj lokálně z české sítě; z runnerů GitHubu je playground

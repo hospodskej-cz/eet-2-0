@@ -10,7 +10,7 @@
   "scripts": {
     "lint": "biome ci .",
     "format": "biome check --write .",
-    "typecheck": "tsc -p packages/core/tsconfig.json && tsc -p packages/ingest/tsconfig.json && tsc -p packages/queue/tsconfig.json && tsc -p packages/server/tsconfig.json && tsc -p tsconfig.json",
+    "typecheck": "tsc -p packages/core/tsconfig.json && tsc -p packages/ingest/tsconfig.json && tsc -p packages/queue/tsconfig.json && tsc -p packages/server/tsconfig.json && tsc -p packages/cli/tsconfig.json && tsc -p tsconfig.json",
     "test": "bun test",
     "check": "bun run lint && bun run typecheck && bun test",
     "build:core": "bun build packages/core/src/index.ts --outdir packages/core/dist --target node --format esm",
@@ -18,11 +18,12 @@
     "spec:drift": "bun scripts/check-spec-drift.ts",
     "certs:playground": "bun scripts/fetch-playground-certs.ts",
     "playground:send": "bun scripts/playground-send.ts",
-    "test:live": "EET_TEST_LIVE=1 bun test packages/core/test/live packages/queue/test/live packages/server/test/live",
+    "test:live": "EET_TEST_LIVE=1 bun test packages/core/test/live packages/queue/test/live packages/server/test/live packages/cli/test/live",
     "gen:trust-anchors": "bun scripts/gen-trust-anchors.ts",
     "build:ingest": "bun build packages/ingest/src/index.ts --outdir packages/ingest/dist --target node --format esm",
     "build:queue": "bun build packages/queue/src/index.ts --outdir packages/queue/dist --target node --format esm",
-    "gen:openapi": "bun scripts/gen-openapi.ts && biome format --write docs/openapi.json"
+    "gen:openapi": "bun scripts/gen-openapi.ts && biome format --write docs/openapi.json",
+    "build:binaries": "bun scripts/build-binaries.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

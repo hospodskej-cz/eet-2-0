@@ -1,3 +1,7 @@
-/** @eet-gateway/cli — Command-line interface over the same core (phase 6). */
+/**
+ * @eet-gateway/cli — the `eet` command over the same core, ingest, queue and server. `run` takes
+ * argv and an I/O object, so other tools can embed or test it. Commands: docs/CLI.md.
+ */
 
-export const VERSION = "0.0.0";
+export { type CliIO, EXIT, type GatewayHandle, UsageError } from "./context.ts";
+export { HELP, run, VERSION } from "./run.ts";

@@ -3,7 +3,7 @@
 // Exit codes: 0 after SIGTERM/SIGINT, 1 for a configuration problem, 2 for bad arguments.
 import { parseArgs } from "node:util";
 import { ConfigError } from "./config.ts";
-import { serve } from "./serve.ts";
+import { serveUntilSignal } from "./serve.ts";
 
 let args: ReturnType<typeof parseArgs<{ options: typeof OPTIONS }>>["values"];
 const OPTIONS = {
@@ -32,18 +32,7 @@ if (port !== undefined && (!Number.isInteger(port) || port < 0 || port > 65_535)
 }
 
 try {
-  const server = await serve({ configPath: args.config, dev: args.dev, port });
-  let signals = 0;
-  for (const signal of ["SIGTERM", "SIGINT"] as const) {
-    process.on(signal, () => {
-      signals += 1;
-      if (signals > 1) process.exit(1); // a second signal: stop waiting
-      server.stop().then(
-        () => process.exit(0),
-        () => process.exit(1),
-      );
-    });
-  }
+  process.exit(await serveUntilSignal({ configPath: args.config, dev: args.dev, port }));
 } catch (error) {
   console.error(error instanceof ConfigError ? error.message : `Start selhal: ${String(error)}`);
   process.exit(1);

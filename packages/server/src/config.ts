@@ -129,7 +129,9 @@ export interface ParseConfigOptions {
   readonly env?: Readonly<Record<string, string | undefined>>;
   /** Relative paths in the configuration are relative to this directory (the file's). */
   readonly baseDir: string;
-  readonly dev?: boolean;
+  readonly dev?: boolean | undefined;
+  /** `false` for command-line use: API keys and `--dev` rules do not apply. Default `true`. */
+  readonly server?: boolean | undefined;
 }
 
 /** `EET_REGISTER_<ID>_…`: the register id upper-cased, anything but A–Z and 0–9 as `_`. */
@@ -152,9 +154,10 @@ export function parseConfig(raw: unknown, options: ParseConfigOptions): ServerCo
 
   const file = parsed.data;
   const path = (p: string) => (isAbsolute(p) ? p : resolve(options.baseDir, p));
-  const dev = options.dev === true;
+  const forServer = options.server !== false;
+  const dev = forServer && options.dev === true;
   checkTimeZone(file.timeZone, "timeZone", issues);
-  if (!dev && file.apiKeys.length === 0)
+  if (forServer && !dev && file.apiKeys.length === 0)
     issues.push({
       path: "apiKeys",
       message: "bez API klíčů služba nenaběhne (apiKeys nebo EET_API_KEYS); výjimkou je --dev",

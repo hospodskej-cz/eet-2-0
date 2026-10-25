@@ -13,5 +13,8 @@
     "@eet-gateway/ingest": "workspace:*",
     "@eet-gateway/queue": "workspace:*",
     "@eet-gateway/server": "workspace:*"
+  },
+  "bin": {
+    "eet": "./src/main.ts"
   }
 }
