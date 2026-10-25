@@ -3,6 +3,11 @@ name: Live playground
 # Real round trips against the EET playground with the shared test certificates (three made-up
 # sales per run; the playground registers nothing). Not on push: it depends on an external
 # service and would add noise to it. Tuesday avoids the Thursday 20:00–06:00 maintenance window.
+#
+# pg.trzbyeet.gov.cz does not accept connections from GitHub-hosted runners (verified
+# 2026-10-25: IPv4 TCP connect times out, no IPv6 route; SPEC_NOTES §15). Set the repository
+# variable LIVE_RUNNER to the label of a self-hosted runner that can reach it (e.g. one in CZ);
+# until then the schedule is skipped and manual runs fall back to ubuntu-latest.
 on:
   schedule:
     - cron: "0 7 * * 2"
@@ -13,7 +18,8 @@ permissions:
 
 jobs:
   live:
-    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || vars.LIVE_RUNNER != ''
+    runs-on: ${{ vars.LIVE_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

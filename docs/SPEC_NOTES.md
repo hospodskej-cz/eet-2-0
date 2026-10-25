@@ -357,6 +357,10 @@ Do rozhodnutí platí doporučená varianta. V závorce je fáze, kterou otázka
   potom `rejected` k ruční kontrole.
 - **OQ6 Diakritika v `id_pokl`/`porad_cis` (např. z CSV v CP1250) (fáze 3).** Doporučení: vrátit
   `invalid`, nepřevádět na znaky bez diakritiky, protože jde o obchodní identifikátory.
+- **OQ8 Síťová dostupnost EET z místa nasazení (fáze 5).** Playground nepřijímá spojení
+  z runnerů GitHubu (§15). Doporučení: Docker image a dokumentace nasazení musí výslovně uvést,
+  že brána potřebuje síť, ze které je EET dostupné. Do `GET /health` přidat volitelnou kontrolu
+  dosažitelnosti endpointu přes preflight `OPTIONS`, která nic neodesílá.
 - **OQ7 npm scope (fáze 7).** Zatím `@eet-gateway/*` s `private: true`. Jméno a vlastnictví scope
   vyřešit před publikací.
 
@@ -394,3 +398,20 @@ a verifieru.
 
 Produkční podpisový certifikát zatím nemáme. Podle P §3.3 ho vydává tatáž I.CA, CN produkčního
 leafu ale neznáme.
+
+**Dostupnost playgroundu podle sítě (25. 10. 2026):**
+
+| Odkud                                  | Výsledek                                                                                                                                                                                                                                                  |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Česká síť (vývojový počítač)           | `pg.trzbyeet.gov.cz` → `5.145.110.163`, TCP spojení za 57 ms, preflight `OPTIONS` vrátí 204; živé testy projdou (3/3)                                                                                                                                     |
+| GitHub-hosted runner (`ubuntu-latest`) | DNS vrací `5.145.110.163` i `2a01:8b40:1000:d0::1:163` (`pg.eet.spcss.cz`). **IPv4: TCP spojení vyprší** (curl 28, 15 s), IPv6: runner nemá trasu. `eet.gov.cz` je ze stejného runneru dostupný (HTTP 200). Transport správně vrátil `uncertain/timeout`. |
+
+Playground tedy nejspíš filtruje zdrojové IP adresy (cloud nebo zahraničí). Zdroje o tom nic
+neříkají. **Důsledky:**
+
+- Živé testy běží lokálně (`bun run test:live`), nebo na self-hosted runneru v síti, odkud je
+  playground dostupný (proměnná repozitáře `LIVE_RUNNER`, viz `.github/workflows/live-playground.yml`).
+- **Otevřené pro nasazení (OQ8):** jestli produkční `trzbyeet.gov.cz` filtruje zdrojové IP
+  stejně. Pokud ano, brána musí běžet v síti, kterou EET přijímá; neplatí to pro libovolný cloud
+  region. Ověřit se to dá jen preflightem `OPTIONS` z cílového prostředí (žádná tržba se při
+  tom neodesílá).

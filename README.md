@@ -68,6 +68,9 @@ bun run certs:playground  # stáhne sdílené testovací certifikáty do .cache/
 bun run test:live         # živé testy proti playgroundu (3 vymyšlené tržby)
 ```
 
+Playground nepřijímá spojení z runnerů GitHubu (SPEC_NOTES §15). Živé testy proto pouštěj
+lokálně z české sítě, nebo nastav self-hosted runner přes proměnnou repozitáře `LIVE_RUNNER`.
+
 Offline testy potřebují testovací certifikáty (`bun run certs:playground`); bez nich selžou se
 srozumitelnou hláškou.
 
