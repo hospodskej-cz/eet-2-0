@@ -26,10 +26,13 @@ jobs:
       # rozhraní §2.3.3, answers 204 without sending a sale). Never fails the job by itself.
       - name: Playground reachability
         run: |
-          getent hosts pg.trzbyeet.gov.cz || echo "DNS: no answer"
-          curl -sS -o /dev/null --max-time 20 -X OPTIONS \
-            -H "Origin: https://example.org" -H "Access-Control-Request-Method: POST" \
-            -H "Access-Control-Request-Headers: Content-Type, SOAPAction" \
-            -w "HTTP %{http_code} ip=%{remote_ip} connect=%{time_connect}s tls=%{time_appconnect}s total=%{time_total}s\n" \
-            https://pg.trzbyeet.gov.cz/eet/services/EETServiceSOAP/v4 || echo "curl exit $?"
+          getent ahosts pg.trzbyeet.gov.cz | awk '{print $1}' | sort -u || echo "DNS: no answer"
+          for family in -4 -6; do
+            curl $family -sS -o /dev/null --max-time 15 -X OPTIONS \
+              -H "Origin: https://example.org" -H "Access-Control-Request-Method: POST" \
+              -H "Access-Control-Request-Headers: Content-Type, SOAPAction" \
+              -w "IPv${family#-}: HTTP %{http_code} ip=%{remote_ip} connect=%{time_connect}s total=%{time_total}s\n" \
+              https://pg.trzbyeet.gov.cz/eet/services/EETServiceSOAP/v4 || echo "IPv${family#-}: curl exit $?"
+          done
+          curl -4 -sS -o /dev/null --max-time 15 -w "eet.gov.cz IPv4: HTTP %{http_code} ip=%{remote_ip}\n" https://eet.gov.cz/ || true
       - run: bun run test:live
