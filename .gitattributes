@@ -1,0 +1,3 @@
+# Signed or official XML must stay byte-identical (signatures, recorded SHA-256).
+spec/** -text
+test/fixtures/responses/** -text

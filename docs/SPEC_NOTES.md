@@ -306,7 +306,7 @@ CZ00000019|243|24/A-6/Brno_2|#135433c/11/2027|2027-01-09T16:45:36+01:00|3264.50
   Ve fázi 2 je uložíme do `spec/ca/` s hashi ze `sources.json`, aby šel ověřit řetězec
   pokladního certifikátu.
 - **Podpis odpovědí:** certifikát vydaný I.CA, ne CA EET (§2). Řetězec I.CA není součástí žádného
-  dokumentu EET, proto **návrh:** pinning (OQ3).
+  dokumentu EET, proto **návrh:** pinning (OQ3). Skutečný certifikát PG je v §15.
 - **Obnova:** CA EET má REST API (`caeetapi_jwt.zip`, OpenAPI s JWT). Je to mimo rozsah, připraví
   se jen rozhraní.
 - **Důsledek pro konfiguraci (návrh):** kvůli pravidlu §11.9 má pokladna během obnovy mít dva
@@ -346,11 +346,15 @@ Do rozhodnutí platí doporučená varianta. V závorce je fáze, kterou otázka
   `late_first_submission`.
 - **OQ2 Výchozí `retryUncertain` (fáze 4).** Doporučení: `true` (§11 pravidlo 6, §10). Každý POK
   se uloží; víc POK pro jednu tržbu je informativní warning, ne chyba.
-- **OQ3 Ověřování podpisu odpovědi (fáze 2).** Doporučení: v konfiguraci seznam SHA-256 pinů leaf
-  certifikátu, volitelně pin vydávající CA I.CA. Když ověření selže → `uncertain` bez
-  auto-opakování a s alertem (server tržbu nejspíš zapsal). Skutečný PG podpisový certifikát
-  získáme jedním živým odesláním v ostrém módu na PG se sdílenými testovacími certifikáty
-  (fáze 2).
+- **OQ3 Ověřování podpisu odpovědi (fáze 2).** Podklady jsou získané (§15): leaf certifikát PG
+  platí jen do 2027-06-08, vydávající `I.CA Public CA/RSA 06/2022` do 2032-06-17. Pin samotného
+  leafu by tedy v červnu 2027 rozbil všechny instalace, které si nestihnou aktualizovat
+  konfiguraci. **Upravené doporučení:** výchozí důvěra = podpis leafem, který je podepsaný
+  pinovaným certifikátem `I.CA Public CA/RSA 06/2022` (SPKI pin) a je v době ověření platný,
+  a subjekt leafu má `O = Generální finanční ředitelství` a `organizationIdentifier = NTRCZ-72080043`.
+  Piny leaf certifikátu budou volitelný přísnější režim. Když ověření selže → `uncertain` bez
+  auto-opakování a s alertem (server tržbu nejspíš zapsal). Otevřené zůstává, jak parsovat X.509
+  v runtime-neutrálním jádru (malý ASN.1 parser, nebo knihovna); rozhodne plán fáze 2.
 - **OQ4 Offset `dat_trzby` (fáze 3).** Doporučení: vstup se `Z` nebo cizím offsetem převést do
   zóny pokladny (stejný okamžik) a vrátit warning. Do fronty se uloží výsledný řetězec, který se
   při opakování použije beze změny.
@@ -360,3 +364,38 @@ Do rozhodnutí platí doporučená varianta. V závorce je fáze, kterou otázka
   `invalid`, nepřevádět na znaky bez diakritiky, protože jde o obchodní identifikátory.
 - **OQ7 npm scope (fáze 7).** Zatím `@eet-gateway/*` s `private: true`. Jméno a vlastnictví scope
   vyřešit před publikací.
+
+## 15. Živé ověření na playgroundu
+
+**25. 10. 2026, 17:30 SEČ.** Jedna vymyšlená tržba v ostrém módu (`overeni` neuvedeno) na
+`https://pg.trzbyeet.gov.cz/eet/services/EETServiceSOAP/v4`, odeslaná se svolením uživatele
+jednorázovým skriptem nad `@finitoapp/eet-client@0.4.0` se sdíleným testovacím certifikátem
+`CZ00000019`. Na PG se nic neeviduje a POK tam neplatí (§3).
+
+| Položka                        | Hodnota                                                                                                                                                                                                                                |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Odesláno                       | `eic_popl=CZ00000019`, `id_jednotky=11`, `id_pokl=eet2-lib-probe`, `porad_cis=probe-1792945804148`, `dat_trzby=2026-10-25T17:30:04+01:00`, `celk_trzba=1.00`, `prvni_zaslani=true`, `uuid_zpravy=016baac6-a5d1-4a6b-b304-8910f1c89d89` |
+| Velikost podepsaného požadavku | 3 879 B (limit 12 kB, §2)                                                                                                                                                                                                              |
+| HTTP                           | 200, `Content-Type: text/xml; charset=UTF-8`, odezva asi 200 ms                                                                                                                                                                        |
+| `X-Global-Transaction-Id`      | `bc626a986ade2e8c00fe06e3` (24 hex znaků)                                                                                                                                                                                              |
+| Odpověď                        | `Potvrzeni pok="8b925c37-737a-4242-86a7-986a62bc0cc9-ff" test="true"`, `dat_prij` = náš `dat_odesl` s `+01:00`, žádné `Varovani`                                                                                                       |
+| Hlavička odpovědi              | `wsse:Security` má `soapenv:mustUnderstand="1"`; parser odpovědi to musí snést                                                                                                                                                         |
+| Podpis odpovědi                | jeden `BinarySecurityToken`; RSA-SHA256 podpis `SignedInfo` ověřen veřejným klíčem z tohoto certifikátu                                                                                                                                |
+
+Shoduje se s Tabulkou 1 (R §2.2.2) i s formátem POK pro PG (R §3.4.2.3). Odpověď je bajtově
+uložená v `test/fixtures/responses/pg-accepted-2026-10-25.xml` pro offline testy parseru
+a verifieru.
+
+**Podpisový certifikát odpovědí na PG:**
+
+|                     | Leaf                                                                                                                                                                                                                                        | Vydavatel                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Subjekt             | `CN=NEOSTRE - playground prostredi EET, O=Generální finanční ředitelství, organizationIdentifier=NTRCZ-72080043, serialNumber=ICA - 1275853, C=CZ`                                                                                          | `CN=I.CA Public CA/RSA 06/2022, O=První certifikační autorita, a.s., organizationIdentifier=NTRCZ-26439395, C=CZ` |
+| Vydal               | `I.CA Public CA/RSA 06/2022`                                                                                                                                                                                                                | `I.CA Root CA/RSA 05/2022`                                                                                        |
+| Platnost            | 2026-06-08 14:06:44Z až **2027-06-08 14:06:41Z**                                                                                                                                                                                            | 2022-06-20 až 2032-06-17                                                                                          |
+| SHA-256 certifikátu | `B810009EDEAF22F6004FB5951E4A10A17EE71E41AB207F912C086EF4CAFBF93B`                                                                                                                                                                          | `DF5BAF6D7E1A7D14E9911C5B8C676EC6EBCAD9354A74F4AC7314E133E07A94DE`                                                |
+| SHA-256 SPKI        | `5ec0940f35be2f7c79100030ad381aa9cc20fc0558530f510be7b71a87596f16`                                                                                                                                                                          | —                                                                                                                 |
+| Další               | KeyUsage `digitalSignature, nonRepudiation, keyEncipherment`; EKU `emailProtection, clientAuth`; politiky `1.3.6.1.4.1.23624.10.1.71.1.1`, `0.4.0.2042.1.1`; CRL `http://scrldp1.ica.cz/pca22_rsa.crl`; OCSP `http://ocsp.ica.cz/pca22_rsa` | stažen z AIA leafu `http://s.ica.cz/pca22_rsa.cer`; `openssl verify -partial_chain` leafu vůči němu: OK           |
+
+Produkční podpisový certifikát zatím nemáme. Podle P §3.3 ho vydává tatáž I.CA, CN produkčního
+leafu ale neznáme.

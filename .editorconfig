@@ -14,3 +14,7 @@ trim_trailing_whitespace = false
 [spec/**]
 insert_final_newline = unset
 trim_trailing_whitespace = unset
+
+[test/fixtures/responses/**]
+insert_final_newline = unset
+trim_trailing_whitespace = unset
