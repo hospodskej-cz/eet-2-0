@@ -35,7 +35,7 @@ jobs:
       - run: bun test
 
   core-compat:
-    name: Core + ingest on ${{ matrix.runtime.name }}
+    name: Core, ingest, queue on ${{ matrix.runtime.name }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -52,6 +52,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build:core
       - run: bun run build:ingest
+      - run: bun run build:queue
       - if: matrix.runtime.node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -60,6 +61,7 @@ jobs:
         run: |
           node packages/core/test/compat/smoke.mjs
           node packages/ingest/test/compat/smoke.mjs
+          node packages/queue/test/compat/smoke.mjs
       - if: matrix.runtime.deno
         uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
@@ -68,3 +70,4 @@ jobs:
         run: |
           deno run packages/core/test/compat/smoke.mjs
           deno run packages/ingest/test/compat/smoke.mjs
+          deno run packages/queue/test/compat/smoke.mjs

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   type IngestContext,
   type IngestResult,
+  inputRegister,
   normalizeKey,
   normalizeSale,
   WarningCode,
@@ -167,6 +168,14 @@ describe("message options", () => {
       prvni_zaslani: false,
       register: "shop-1",
     });
+  });
+
+  test("inputRegister reads the register before normalization", () => {
+    expect(inputRegister({ registerId: " shop-1 " })).toBe("shop-1");
+    expect(inputRegister({ pokladna: 7 }, { pokladna: "register" })).toBe("7");
+    expect(inputRegister({ register: "" })).toBeUndefined();
+    expect(inputRegister(BASE)).toBeUndefined();
+    expect(inputRegister("x")).toBeUndefined();
   });
 
   test("Czech yes/no is understood with a warning", () => {

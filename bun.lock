@@ -45,6 +45,8 @@
       "version": "0.0.0",
       "dependencies": {
         "@eet-gateway/core": "workspace:*",
+        "@eet-gateway/ingest": "workspace:*",
+        "zod": "4.6.7",
       },
     },
     "packages/server": {

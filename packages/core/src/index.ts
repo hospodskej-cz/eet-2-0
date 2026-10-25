@@ -44,6 +44,7 @@ export {
   type ResponseVerifierOptions,
   responseTrustFrom,
 } from "./response-trust.ts";
+export { saleKey } from "./sale-key.ts";
 export {
   EET_PATTERNS,
   type EetHeader,

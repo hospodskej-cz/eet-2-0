@@ -30,6 +30,7 @@ for (const { row, result } of batch.rows) if (!result.ok) report(row, result.iss
 | `parseSales(source, format, context?)` | `string` nebo `Uint8Array` ve formátu `json` / `ndjson` / `csv` / `xml` → `BatchResult` |
 | `formatFromContentType(contentType)`   | `application/json`, `application/x-ndjson`, `text/csv`, `application/xml` → formát      |
 | `SaleInputSchema`                      | zod schéma volného vstupu (kanonické názvy), pro dokumentaci API                        |
+| `inputRegister(input, fieldMap?)`      | Pokladna, kterou vstup určuje (pole `register` nebo alias), ještě před normalizací      |
 
 `context` (vše nepovinné):
 

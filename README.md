@@ -9,13 +9,16 @@ HTTP službu s OpenAPI pro jiné jazyky nebo jako CLI.
 > An open-source gateway for Czech EET 2.0 sales registration: library, HTTP service and CLI.
 > Full English documentation will follow in phase 7.
 
-**Stav: fáze 3 z 7.**
+**Stav: fáze 4 z 7.**
 
 - Jádro (`packages/core`) umí načíst certifikát z `.p12`, podepsat a odeslat jednu tržbu
   a ověřit podpis potvrzení; ověřeno živě proti playgroundu.
 - Ingest (`packages/ingest`) převede tržby z objektů, JSON, NDJSON, CSV (UTF-8 i CP1250) a XML
   na platná data EET.
-- Fronta, HTTP API a CLI přijdou v dalších fázích.
+- Fronta (`packages/queue`) každou tržbu nejdřív uloží (SQLite v Bunu, Node i Deno), pak odešle
+  a po výpadku bezpečně doposílá. Je idempotentní a nikdy nepošle tutéž tržbu dvakrát jako první
+  odeslání.
+- HTTP API a CLI přijdou v dalších fázích.
 
 - [docs/SPEC_NOTES.md](docs/SPEC_NOTES.md): výtah z oficiální specifikace s odkazy na zdroje,
   rozdíly mezi zadáním a zdroji, otevřené otázky, živé ověření (§15)
@@ -25,6 +28,8 @@ HTTP službu s OpenAPI pro jiné jazyky nebo jako CLI.
   a čtení X.509
 - [docs/INGEST.md](docs/INGEST.md): vstupní formáty, aliasy polí, pravidla normalizace, kódy
   varování a chyb
+- [docs/QUEUE.md](docs/QUEUE.md): fronta, stavy, `SaleResult`, idempotence, události, úložiště
+- [docs/ADR-003-queue-retry-policy.md](docs/ADR-003-queue-retry-policy.md): pravidla doposílání
 
 ## Vyzkoušej
 
@@ -75,6 +80,29 @@ const result = normalizeSale(
 const batch = parseSales(csvBytes, "csv"); // výsledek pro každý řádek s číslem řádku
 ```
 
+S frontou (uložení, odeslání, doposílání po výpadku, idempotence):
+
+```ts
+import { Database } from "bun:sqlite"; // Node, Deno: DatabaseSync z "node:sqlite"
+import { createEetQueue, createSqliteStore } from "@eet-gateway/queue";
+
+const queue = createEetQueue({
+  store: createSqliteStore(new Database("eet-queue.db")),
+  registers: {
+    "kasa-1": {
+      transport,
+      context: { register: { eic_popl: "CZ00000019", id_jednotky: "11", id_pokl: "KASA-1" } },
+    },
+  },
+});
+queue.start();
+const result = await queue.submit(
+  { porad_cis: "2026/0001", dat_trzby: new Date(), celk_trzba: "250,00" },
+  { idempotencyKey: requestId },
+);
+// result.status: accepted | verification_ok | rejected | queued | uncertain | invalid
+```
+
 ## Síťové požadavky
 
 Server, na kterém knihovnu provozuješ, musí mít HTTPS spojení (TLS 1.2+) na endpoint EET.
@@ -95,10 +123,10 @@ testy proti XSD.
 ```sh
 bun install
 bun run check             # biome + tsc + bun test
-bun run compat:node       # sestaví core + ingest a ověří, že běží v Node
+bun run compat:node       # sestaví core, ingest a queue a ověří, že běží v Node
 bun run spec:drift        # porovná oficiální dokumenty na eet.gov.cz se stavem v docs/sources
 bun run certs:playground  # stáhne sdílené testovací certifikáty do .cache/ (necommitují se)
-bun run test:live         # živé testy proti playgroundu (3 vymyšlené tržby)
+bun run test:live         # živé testy proti playgroundu (5 vymyšlených zpráv)
 ```
 
 Živé testy proti playgroundu pouštěj lokálně z české sítě; z runnerů GitHubu je playground

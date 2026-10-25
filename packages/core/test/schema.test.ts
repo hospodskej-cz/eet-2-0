@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
 import { extractTrzba, validateAgainstXsd } from "../../../test/contract/xmllint.ts";
-import { EetHeaderSchema, EetReceiptDataSchema, isEetDateTime } from "../src/index.ts";
+import { EetHeaderSchema, EetReceiptDataSchema, isEetDateTime, saleKey } from "../src/index.ts";
 import { repoPath, xmlAttributes, xsdBooleans } from "./helpers.ts";
 
 const HEADER_ATTRIBUTES = new Set(["uuid_zpravy", "dat_odesl", "prvni_zaslani", "overeni"]);
@@ -87,4 +87,19 @@ test("schemas reject unknown fields instead of dropping them", () => {
     totalAmount: "1.00",
   });
   expect(result.success).toBe(false);
+});
+
+test("saleKey joins the six identifying values in the order of rozhraní §4", () => {
+  const key = saleKey({
+    eic_popl: "CZ00000019",
+    id_jednotky: "243",
+    id_pokl: "24/A-6/Brno_2",
+    porad_cis: "#135433c/11/2027",
+    dat_trzby: "2027-01-09T16:45:36+01:00",
+    celk_trzba: "3264.50",
+    urceno_cerp_zuct: "100.00",
+  });
+  expect(key).toBe(
+    "CZ00000019|243|24/A-6/Brno_2|#135433c/11/2027|2027-01-09T16:45:36+01:00|3264.50",
+  );
 });

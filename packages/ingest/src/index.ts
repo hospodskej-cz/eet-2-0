@@ -23,6 +23,7 @@ export {
 export {
   type IngestContext,
   type IngestResult,
+  inputRegister,
   type NormalizedSale,
   normalizeSale,
   type RegisterDefaults,

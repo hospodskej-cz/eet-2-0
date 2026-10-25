@@ -8,7 +8,12 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "engines": {
+    "node": ">=22.18.0"
+  },
   "dependencies": {
-    "@eet-gateway/core": "workspace:*"
+    "@eet-gateway/core": "workspace:*",
+    "@eet-gateway/ingest": "workspace:*",
+    "zod": "4.6.7"
   }
 }

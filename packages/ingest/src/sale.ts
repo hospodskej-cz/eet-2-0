@@ -184,6 +184,18 @@ function normalizeBoolean(
   };
 }
 
+/**
+ * The register an input names (field `register` or an alias), read before normalization so the
+ * caller can pick that register's defaults. Undefined when the input names none.
+ */
+export function inputRegister(input: unknown, fieldMap?: FieldMap): string | undefined {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) return undefined;
+  const value = mapFields(input as Record<string, unknown>, fieldMap).values.register;
+  if (typeof value !== "string" && typeof value !== "number") return undefined;
+  const text = String(value).trim();
+  return text === "" ? undefined : text;
+}
+
 export function normalizeSale(input: unknown, context: IngestContext = {}): IngestResult {
   if (typeof input !== "object" || input === null || Array.isArray(input)) {
     return { ok: false, issues: [issue("invalid_type", "Tržba musí být objekt.")], warnings: [] };
