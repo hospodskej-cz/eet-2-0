@@ -30,15 +30,16 @@ export function validateAgainstXsd(xml: string): XsdResult {
 }
 
 /**
- * Extracts the `<Trzba>` element from a SOAP request and re-declares its namespace prefix,
- * which in captured requests is declared on `<soapenv:Envelope>`.
+ * Extracts the `<Trzba>` element from a SOAP request. When its namespace prefix is declared on an
+ * ancestor (as in the captured requests, on `<soapenv:Envelope>`), the declaration is added.
  */
 export function extractTrzba(soap: string): string {
-  const match = soap.match(/<(\w+):Trzba>[\s\S]*<\/\1:Trzba>/);
+  const match = soap.match(/<(\w+):Trzba\b([^>]*)>[\s\S]*<\/\1:Trzba>/);
   if (match === null || match[1] === undefined) throw new Error("no <Trzba> element found");
-  const prefix = match[1];
-  return match[0].replace(
-    `<${prefix}:Trzba>`,
-    `<${prefix}:Trzba xmlns:${prefix}="http://fs.gov.cz/eet/schema/v4">`,
+  const [element, prefix, attributes = ""] = match;
+  if (attributes.includes(`xmlns:${prefix}=`)) return element;
+  return element.replace(
+    `<${prefix}:Trzba`,
+    `<${prefix}:Trzba xmlns:${prefix}="http://fs.gov.cz/eet/schema/v4"`,
   );
 }

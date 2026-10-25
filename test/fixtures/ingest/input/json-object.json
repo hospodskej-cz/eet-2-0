@@ -1,0 +1,14 @@
+{
+  "taxpayerId": "CZ8551015704",
+  "authorizingTaxpayerId": "CZ00000019",
+  "multipleTaxpayers": true,
+  "premisesId": 181,
+  "posId": "00/2535/CN58",
+  "receiptNumber": "0/2482/IE25",
+  "saleDateTime": "2026-11-15T10:59:00Z",
+  "totalAmount": "87988.00",
+  "amountIntendedForDrawing": "343.00",
+  "amountDrawn": "237.00",
+  "verify": true,
+  "register": "shop-1"
+}

@@ -1,0 +1,37 @@
+{
+  "rows": [
+    {
+      "row": 1,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ8551015704",
+            "eic_poverujiciho": "CZ00000019",
+            "povereni_vice_popl": true,
+            "id_jednotky": "181",
+            "id_pokl": "00/2535/CN58",
+            "porad_cis": "0/2482/IE25",
+            "dat_trzby": "2026-11-15T11:59:00+01:00",
+            "celk_trzba": "87988.00",
+            "urceno_cerp_zuct": "343.00",
+            "cerp_zuct": "237.00"
+          },
+          "overeni": true,
+          "prvni_zaslani": true,
+          "register": "shop-1"
+        },
+        "warnings": [
+          {
+            "code": 1012,
+            "message": "dat_trzby: \"2026-11-15T10:59:00Z\" přepočteno do zóny Europe/Prague → \"2026-11-15T11:59:00+01:00\" (stejný okamžik).",
+            "source": "ingest",
+            "field": "dat_trzby"
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [],
+  "issues": []
+}

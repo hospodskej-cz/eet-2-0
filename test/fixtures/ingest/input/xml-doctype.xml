@@ -1,0 +1,3 @@
+<?xml version="1.0"?>
+<!DOCTYPE Data [<!ENTITY x "boom">]>
+<Data eic_popl="&x;"/>

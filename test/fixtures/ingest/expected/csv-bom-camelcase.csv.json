@@ -1,0 +1,58 @@
+{
+  "rows": [
+    {
+      "row": 2,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "B-1",
+            "dat_trzby": "2026-11-15T11:59:00+01:00",
+            "celk_trzba": "1.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": [
+          {
+            "code": 1041,
+            "message": "Neznámé pole \"note\" bylo ignorováno.",
+            "source": "ingest",
+            "field": "note"
+          }
+        ]
+      }
+    },
+    {
+      "row": 4,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "B-2",
+            "dat_trzby": "2026-11-15T11:59:00+01:00",
+            "celk_trzba": "2.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": [
+          {
+            "code": 1041,
+            "message": "Neznámé pole \"note\" bylo ignorováno.",
+            "source": "ingest",
+            "field": "note"
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [],
+  "issues": []
+}

@@ -17,6 +17,7 @@ export {
   type Signer,
   trustAnchor,
 } from "./certificate.ts";
+export { type CheckEndpointOptions, checkEndpoint, type EndpointCheck } from "./check-endpoint.ts";
 export * from "./constants.ts";
 export {
   type CreateHeaderOptions,

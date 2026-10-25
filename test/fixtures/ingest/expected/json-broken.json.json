@@ -1,0 +1,10 @@
+{
+  "rows": [],
+  "warnings": [],
+  "issues": [
+    {
+      "code": "parse_error",
+      "message": "JSON: JSON Parse error: Property name must be a string literal"
+    }
+  ]
+}

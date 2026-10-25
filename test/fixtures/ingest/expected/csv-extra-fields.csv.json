@@ -1,0 +1,57 @@
+{
+  "rows": [
+    {
+      "row": 2,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "C-1",
+            "dat_trzby": "2026-11-15T11:59:00+01:00",
+            "celk_trzba": "1.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": []
+      }
+    },
+    {
+      "row": 3,
+      "result": {
+        "ok": false,
+        "issues": [
+          {
+            "code": "parse_error",
+            "message": "CSV řádek 3: 7 polí, hlavička má 6 (oddělovač \",\")."
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "row": 4,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "C-3",
+            "dat_trzby": "2026-11-15T11:59:00+01:00",
+            "celk_trzba": "3.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": []
+      }
+    }
+  ],
+  "warnings": [],
+  "issues": []
+}

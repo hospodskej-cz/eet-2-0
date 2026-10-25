@@ -14,12 +14,13 @@
     "test": "bun test",
     "check": "bun run lint && bun run typecheck && bun test",
     "build:core": "bun build packages/core/src/index.ts --outdir packages/core/dist --target node --format esm",
-    "compat:node": "bun run build:core && node packages/core/test/compat/smoke.mjs",
+    "compat:node": "bun run build:core && bun run build:ingest && node packages/core/test/compat/smoke.mjs && node packages/ingest/test/compat/smoke.mjs",
     "spec:drift": "bun scripts/check-spec-drift.ts",
     "certs:playground": "bun scripts/fetch-playground-certs.ts",
     "playground:send": "bun scripts/playground-send.ts",
     "test:live": "EET_TEST_LIVE=1 bun test packages/core/test/live",
-    "gen:trust-anchors": "bun scripts/gen-trust-anchors.ts"
+    "gen:trust-anchors": "bun scripts/gen-trust-anchors.ts",
+    "build:ingest": "bun build packages/ingest/src/index.ts --outdir packages/ingest/dist --target node --format esm"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

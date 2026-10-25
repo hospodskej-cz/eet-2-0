@@ -1,0 +1,181 @@
+{
+  "rows": [
+    {
+      "row": 2,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "KASA-1",
+            "porad_cis": "U-1",
+            "dat_trzby": "2026-11-15T11:58:00+01:00",
+            "celk_trzba": "1234.50"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": [
+          {
+            "code": 1041,
+            "message": "Neznámé pole \"Poznámka\" bylo ignorováno.",
+            "source": "ingest",
+            "field": "Poznámka"
+          },
+          {
+            "code": 1021,
+            "message": "eic_popl: doplněno z konfigurace pokladny (\"CZ00000019\").",
+            "source": "ingest",
+            "field": "eic_popl"
+          },
+          {
+            "code": 1021,
+            "message": "id_jednotky: doplněno z konfigurace pokladny (\"11\").",
+            "source": "ingest",
+            "field": "id_jednotky"
+          },
+          {
+            "code": 1021,
+            "message": "id_pokl: doplněno z konfigurace pokladny (\"KASA-1\").",
+            "source": "ingest",
+            "field": "id_pokl"
+          },
+          {
+            "code": 1002,
+            "message": "celk_trzba: desetinná čárka \"1 234,50\" → \"1234.50\".",
+            "source": "ingest",
+            "field": "celk_trzba"
+          },
+          {
+            "code": 1003,
+            "message": "celk_trzba: \"1 234,50\" upraveno na \"1234.50\".",
+            "source": "ingest",
+            "field": "celk_trzba"
+          },
+          {
+            "code": 1015,
+            "message": "dat_trzby: \"15. 11. 2026 11:58\" chápáno jako místní čas Europe/Prague → \"2026-11-15T11:58:00+01:00\".",
+            "source": "ingest",
+            "field": "dat_trzby"
+          }
+        ]
+      }
+    },
+    {
+      "row": 3,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "KASA-1",
+            "porad_cis": "U-2",
+            "dat_trzby": "2026-11-15T11:59:59+01:00",
+            "celk_trzba": "87988.50"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": [
+          {
+            "code": 1021,
+            "message": "eic_popl: doplněno z konfigurace pokladny (\"CZ00000019\").",
+            "source": "ingest",
+            "field": "eic_popl"
+          },
+          {
+            "code": 1021,
+            "message": "id_jednotky: doplněno z konfigurace pokladny (\"11\").",
+            "source": "ingest",
+            "field": "id_jednotky"
+          },
+          {
+            "code": 1021,
+            "message": "id_pokl: doplněno z konfigurace pokladny (\"KASA-1\").",
+            "source": "ingest",
+            "field": "id_pokl"
+          },
+          {
+            "code": 1002,
+            "message": "celk_trzba: desetinná čárka \"87988,5\" → \"87988.50\".",
+            "source": "ingest",
+            "field": "celk_trzba"
+          },
+          {
+            "code": 1003,
+            "message": "celk_trzba: \"87988,5\" upraveno na \"87988.50\".",
+            "source": "ingest",
+            "field": "celk_trzba"
+          },
+          {
+            "code": 1015,
+            "message": "dat_trzby: \"15.11.2026 11:59:59\" chápáno jako místní čas Europe/Prague → \"2026-11-15T11:59:59+01:00\".",
+            "source": "ingest",
+            "field": "dat_trzby"
+          }
+        ]
+      }
+    },
+    {
+      "row": 4,
+      "result": {
+        "ok": false,
+        "issues": [
+          {
+            "code": "non_ascii",
+            "message": "porad_cis: \"Pokladna č1\" obsahuje znaky mimo ASCII (diakritiku?); EET je nepřipouští a ingest je nepřepisuje.",
+            "field": "porad_cis"
+          }
+        ],
+        "warnings": [
+          {
+            "code": 1041,
+            "message": "Neznámé pole \"Poznámka\" bylo ignorováno.",
+            "source": "ingest",
+            "field": "Poznámka"
+          },
+          {
+            "code": 1021,
+            "message": "eic_popl: doplněno z konfigurace pokladny (\"CZ00000019\").",
+            "source": "ingest",
+            "field": "eic_popl"
+          },
+          {
+            "code": 1021,
+            "message": "id_jednotky: doplněno z konfigurace pokladny (\"11\").",
+            "source": "ingest",
+            "field": "id_jednotky"
+          },
+          {
+            "code": 1021,
+            "message": "id_pokl: doplněno z konfigurace pokladny (\"KASA-1\").",
+            "source": "ingest",
+            "field": "id_pokl"
+          },
+          {
+            "code": 1002,
+            "message": "celk_trzba: desetinná čárka \"10,00\" → \"10.00\".",
+            "source": "ingest",
+            "field": "celk_trzba"
+          },
+          {
+            "code": 1015,
+            "message": "dat_trzby: \"15.11.2026 11:59\" chápáno jako místní čas Europe/Prague → \"2026-11-15T11:59:00+01:00\".",
+            "source": "ingest",
+            "field": "dat_trzby"
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": 1061,
+      "message": "Soubor není v UTF-8; dekódován jako Windows-1250 (CP1250).",
+      "source": "ingest"
+    }
+  ],
+  "issues": []
+}

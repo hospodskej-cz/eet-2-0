@@ -1,0 +1,64 @@
+{
+  "rows": [
+    {
+      "row": 1,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "N-1",
+            "dat_trzby": "2026-11-15T11:59:00+01:00",
+            "celk_trzba": "5.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": []
+      }
+    },
+    {
+      "row": 3,
+      "result": {
+        "ok": false,
+        "issues": [
+          {
+            "code": "parse_error",
+            "message": "NDJSON: JSON Parse error: Unexpected EOF"
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "row": 4,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "N-4",
+            "dat_trzby": "2026-11-15T12:59:00+01:00",
+            "celk_trzba": "7.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": [
+          {
+            "code": 1014,
+            "message": "dat_trzby: epocha 1794743940 převedeno na \"2026-11-15T12:59:00+01:00\" (Europe/Prague).",
+            "source": "ingest",
+            "field": "dat_trzby"
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [],
+  "issues": []
+}

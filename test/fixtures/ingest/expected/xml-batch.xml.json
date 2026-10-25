@@ -1,0 +1,77 @@
+{
+  "rows": [
+    {
+      "row": 4,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "X/2",
+            "dat_trzby": "2026-11-14T08:00:00+01:00",
+            "celk_trzba": "1.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": false
+        },
+        "warnings": []
+      }
+    },
+    {
+      "row": 8,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "X/3",
+            "dat_trzby": "2026-11-15T11:59:00+01:00",
+            "celk_trzba": "2.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": [
+          {
+            "code": 1002,
+            "message": "celk_trzba: desetinná čárka \"2,00\" → \"2.00\".",
+            "source": "ingest",
+            "field": "celk_trzba"
+          }
+        ]
+      }
+    },
+    {
+      "row": 11,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "X/4",
+            "dat_trzby": "2026-11-15T11:59:00+01:00",
+            "celk_trzba": "3.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": [
+          {
+            "code": 1003,
+            "message": "celk_trzba: \"3\" upraveno na \"3.00\".",
+            "source": "ingest",
+            "field": "celk_trzba"
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [],
+  "issues": []
+}

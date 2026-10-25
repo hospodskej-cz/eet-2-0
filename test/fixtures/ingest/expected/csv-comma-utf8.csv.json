@@ -1,0 +1,79 @@
+{
+  "rows": [
+    {
+      "row": 2,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "2026/1,A",
+            "dat_trzby": "2026-11-15T11:58:00+01:00",
+            "celk_trzba": "250.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": []
+      }
+    },
+    {
+      "row": 3,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "11",
+            "id_pokl": "P1",
+            "porad_cis": "2026/2",
+            "dat_trzby": "2026-11-15T11:59:30+01:00",
+            "celk_trzba": "99.90",
+            "urceno_cerp_zuct": "10.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": [
+          {
+            "code": 1011,
+            "message": "dat_trzby: \"2026-11-15T11:59:30\" chápáno jako místní čas Europe/Prague → \"2026-11-15T11:59:30+01:00\".",
+            "source": "ingest",
+            "field": "dat_trzby"
+          }
+        ]
+      }
+    },
+    {
+      "row": 4,
+      "result": {
+        "ok": true,
+        "sale": {
+          "data": {
+            "eic_popl": "CZ00000019",
+            "id_jednotky": "10",
+            "id_pokl": "P1",
+            "porad_cis": "2026/3",
+            "dat_trzby": "2026-11-15T11:59:45+01:00",
+            "celk_trzba": "-50.00",
+            "cerp_zuct": "25.00"
+          },
+          "overeni": false,
+          "prvni_zaslani": true
+        },
+        "warnings": [
+          {
+            "code": 6,
+            "message": "id_jednotky neodpovida formatem pridelenemu c. evidencni jednotky (aspon 2 cislice, posledni 1–4).",
+            "source": "ingest",
+            "field": "id_jednotky"
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [],
+  "issues": []
+}

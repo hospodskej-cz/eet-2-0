@@ -1,0 +1,10 @@
+{
+  "rows": [],
+  "warnings": [],
+  "issues": [
+    {
+      "code": "unsupported_format",
+      "message": "XML: DOCTYPE/ENTITY není povoleno (řádek 2)."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+[
+  {
+    "eic_popl": "CZ00000019",
+    "id_jednotky": "11",
+    "id_pokl": "P1",
+    "porad_cis": "J-1",
+    "dat_trzby": "2026-11-15T11:59:00+01:00",
+    "celk_trzba": "1.00"
+  },
+  {
+    "eic_popl": "CZ00000019",
+    "id_jednotky": "11",
+    "id_pokl": "P1",
+    "porad_cis": "J-2",
+    "dat_trzby": "2026-11-15T11:59:00+01:00",
+    "celk_trzba": "1.005"
+  },
+  {
+    "eic_popl": "CZ00000019",
+    "id_jednotky": "11",
+    "id_pokl": "P1",
+    "porad_cis": "J-3",
+    "dat_trzby": "2026-11-14T09:00:00+01:00",
+    "celk_trzba": 19.9,
+    "prvni_zaslani": false
+  }
+]

@@ -1,0 +1,4 @@
+<tns:Trzba xmlns:tns="http://fs.gov.cz/eet/schema/v4">
+  <tns:Hlavicka uuid_zpravy="e23e5a5a-08d7-4a08-844d-2b6c6b60621d" dat_odesl="2026-11-15T11:59:00+01:00" prvni_zaslani="true" overeni="true"/>
+  <tns:Data eic_popl="CZ8551015704" eic_poverujiciho="CZ00000019" povereni_vice_popl="true" id_jednotky="181" id_pokl="00/2535/CN58" porad_cis="0/2482/IE25" dat_trzby="2026-11-15T11:59:00+01:00" celk_trzba="87988.00" urceno_cerp_zuct="343.00" cerp_zuct="237.00"/>
+</tns:Trzba>

@@ -342,25 +342,25 @@ Do rozhodnutí platí doporučená varianta. V závorce je fáze, kterou otázka
 
 - **OQ1 Dávky a `async` vs zákaz kumulace (fáze 4–5).** Doporučení: `async` worker posílá hned,
   bez umělého dávkování. `/v1/sales/batch` dokumentovat jen pro doposílání po výpadku a pro
-  migraci. Řádek s `prvni_zaslani=true` a `dat_trzby` starším než pár minut dostane warning
-  `late_first_submission`.
+  migraci. _Částečně hotovo ve fázi 3:_ první odeslání tržby starší než 5 minut dostane
+  varování 1051 `LATE_FIRST_SUBMISSION` ([INGEST](INGEST.md)).
 - **OQ2 Výchozí `retryUncertain` (fáze 4).** Doporučení: `true` (§11 pravidlo 6, §10). Každý POK
   se uloží; víc POK pro jednu tržbu je informativní warning, ne chyba.
 - ~~**OQ3 Ověřování podpisu odpovědi**~~ **Vyřešeno ve fázi 2:** viz
   [ADR-002](ADR-002-response-trust.md). Pin vydávající CA I.CA, kontrola platnosti a subjektu
   GFŘ (`NTRCZ-72080043`), volitelně piny leafů; selhání ověření → `uncertain/signature`. Čtení
   X.509 řeší vlastní minimální čtečka DER. Na produkci zůstává neověřené (§15).
-- **OQ4 Offset `dat_trzby` (fáze 3).** Doporučení: vstup se `Z` nebo cizím offsetem převést do
-  zóny pokladny (stejný okamžik) a vrátit warning. Do fronty se uloží výsledný řetězec, který se
-  při opakování použije beze změny.
+- ~~**OQ4 Offset `dat_trzby`**~~ **Hotovo ve fázi 3:** vstup se `Z` nebo cizím offsetem se převede
+  do zóny pokladny jako stejný okamžik s varováním 1012 ([INGEST](INGEST.md)). Fronta (fáze 4)
+  uloží výsledný řetězec a při opakování ho použije beze změny.
 - **OQ5 Chyba 8 „technická chyba nebo chyba dat“ (fáze 4).** Doporučení: 3 pokusy s backoffem,
   potom `rejected` k ruční kontrole.
-- **OQ6 Diakritika v `id_pokl`/`porad_cis` (např. z CSV v CP1250) (fáze 3).** Doporučení: vrátit
-  `invalid`, nepřevádět na znaky bez diakritiky, protože jde o obchodní identifikátory.
-- **OQ8 Síťová dostupnost EET z místa nasazení (fáze 5).** Playground nepřijímá spojení
-  z runnerů GitHubu (§15). Doporučení: Docker image a dokumentace nasazení musí výslovně uvést,
-  že brána potřebuje síť, ze které je EET dostupné. Do `GET /health` přidat volitelnou kontrolu
-  dosažitelnosti endpointu přes preflight `OPTIONS`, která nic neodesílá.
+- ~~**OQ6 Diakritika v `id_pokl`/`porad_cis`**~~ **Hotovo ve fázi 3:** chyba `non_ascii`, nic se
+  nepřepisuje ([INGEST](INGEST.md)).
+- ~~**OQ8 Síťová dostupnost EET z místa nasazení**~~ **Rozhodnuto (uživatel, 25. 10. 2026):**
+  stavíme knihovnu, kterou si kdokoli zabuduje do svého řešení. Kde poběží, rozhoduje
+  integrátor. Knihovna mu dává `checkEndpoint()` z core (preflight `OPTIONS`, nic se neodesílá)
+  a dokumentaci síťových požadavků (README). Ve fázi 5 se stejná kontrola nabídne v `GET /health`.
 - **OQ7 npm scope (fáze 7).** Zatím `@eet-gateway/*` s `private: true`. Jméno a vlastnictví scope
   vyřešit před publikací.
 
@@ -409,9 +409,8 @@ leafu ale neznáme.
 Playground tedy nejspíš filtruje zdrojové IP adresy (cloud nebo zahraničí). Zdroje o tom nic
 neříkají. **Důsledky:**
 
-- Živé testy běží lokálně (`bun run test:live`), nebo na self-hosted runneru v síti, odkud je
-  playground dostupný (proměnná repozitáře `LIVE_RUNNER`, viz `.github/workflows/live-playground.yml`).
-- **Otevřené pro nasazení (OQ8):** jestli produkční `trzbyeet.gov.cz` filtruje zdrojové IP
-  stejně. Pokud ano, brána musí běžet v síti, kterou EET přijímá; neplatí to pro libovolný cloud
-  region. Ověřit se to dá jen preflightem `OPTIONS` z cílového prostředí (žádná tržba se při
-  tom neodesílá).
+- Živé testy jsou nástroj správce knihovny. Běží lokálně (`bun run test:live`), případně na
+  self-hosted runneru v síti, odkud je playground dostupný (proměnná repozitáře `LIVE_RUNNER`,
+  viz `.github/workflows/live-playground.yml`).
+- Jestli produkční `trzbyeet.gov.cz` filtruje zdrojové IP stejně, není známo. Integrátor si to
+  ověří z cílového prostředí přes `checkEndpoint()` (OQ8).

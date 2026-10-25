@@ -1,16 +1,21 @@
 # EET Gateway (pracovní název)
 
-Open-source (MIT) brána pro odesílání tržeb do **EET 2.0** (Finanční správa ČR, SOAP rozhraní
-4.1). Tržbu přijme v libovolném běžném formátu, převede ji na platnou datovou zprávu, podepíše,
-odešle a vrátí normalizovanou odpověď. Integrovat ji půjde jako TypeScript knihovnu, jako HTTP
-službu s OpenAPI nebo jako CLI.
+Open-source (MIT) knihovna pro odesílání tržeb do **EET 2.0** (Finanční správa ČR, SOAP rozhraní
+4.1), kterou si kdokoli zabuduje do svého pokladního nebo účetního softwaru. Tržbu přijme
+v libovolném běžném formátu, převede ji na platnou datovou zprávu, podepíše, odešle a vrátí
+normalizovanou odpověď. Integrovat ji půjde jako TypeScript knihovnu (Node 22+, Bun, Deno), jako
+HTTP službu s OpenAPI pro jiné jazyky nebo jako CLI.
 
 > An open-source gateway for Czech EET 2.0 sales registration: library, HTTP service and CLI.
 > Full English documentation will follow in phase 7.
 
-**Stav: fáze 2 z 7.** Jádro (`packages/core`) umí načíst certifikát z `.p12`, podepsat
-a odeslat jednu tržbu a ověřit podpis potvrzení. Ověřeno živě proti playgroundu. Fronta, převod
-vstupních formátů, HTTP API a CLI přijdou v dalších fázích.
+**Stav: fáze 3 z 7.**
+
+- Jádro (`packages/core`) umí načíst certifikát z `.p12`, podepsat a odeslat jednu tržbu
+  a ověřit podpis potvrzení; ověřeno živě proti playgroundu.
+- Ingest (`packages/ingest`) převede tržby z objektů, JSON, NDJSON, CSV (UTF-8 i CP1250) a XML
+  na platná data EET.
+- Fronta, HTTP API a CLI přijdou v dalších fázích.
 
 - [docs/SPEC_NOTES.md](docs/SPEC_NOTES.md): výtah z oficiální specifikace s odkazy na zdroje,
   rozdíly mezi zadáním a zdroji, otevřené otázky, živé ověření (§15)
@@ -18,6 +23,8 @@ vstupních formátů, HTTP API a CLI přijdou v dalších fázích.
   `@finitoapp/eet-client`
 - [docs/ADR-002-response-trust.md](docs/ADR-002-response-trust.md): důvěra v podpis potvrzení
   a čtení X.509
+- [docs/INGEST.md](docs/INGEST.md): vstupní formáty, aliasy polí, pravidla normalizace, kódy
+  varování a chyb
 
 ## Vyzkoušej
 
@@ -54,6 +61,32 @@ const outcome = await transport.send({
 // outcome.kind: accepted | verification_ok | rejected | not_sent | uncertain
 ```
 
+Převod vstupu z vlastního systému (bez odesílání, čistá funkce):
+
+```ts
+import { normalizeSale, parseSales } from "@eet-gateway/ingest";
+
+const result = normalizeSale(
+  { totalAmount: "1 234,50", saleDateTime: "15.11.2026 11:58", receiptNumber: "2026/0001" },
+  { register: { eic_popl: "CZ00000019", id_jednotky: "11", id_pokl: "KASA-1" } },
+);
+// result.ok → result.sale.data je EetReceiptData pro transport.send(); result.warnings vysvětlí každou úpravu
+
+const batch = parseSales(csvBytes, "csv"); // výsledek pro každý řádek s číslem řádku
+```
+
+## Síťové požadavky
+
+Server, na kterém knihovnu provozuješ, musí mít HTTPS spojení (TLS 1.2+) na endpoint EET.
+Dostupnost není samozřejmá: playground EET nepřijímá spojení z runnerů GitHub Actions
+(SPEC_NOTES §15) a jak filtruje produkce, není zveřejněno. Z cílového prostředí si to ověříš
+takto (pošle jen preflight `OPTIONS`, žádnou tržbu):
+
+```ts
+import { checkEndpoint, EET_PLAYGROUND_ENDPOINT } from "@eet-gateway/core";
+console.log(await checkEndpoint(EET_PLAYGROUND_ENDPOINT)); // { reachable: true, httpStatus: 204, … }
+```
+
 ## Vývoj
 
 Potřebuješ [Bun](https://bun.sh) ve verzi z `.bun-version` a `xmllint` (libxml2) pro kontraktní
@@ -62,14 +95,15 @@ testy proti XSD.
 ```sh
 bun install
 bun run check             # biome + tsc + bun test
-bun run compat:node       # sestaví jádro a ověří, že běží v Node
+bun run compat:node       # sestaví core + ingest a ověří, že běží v Node
 bun run spec:drift        # porovná oficiální dokumenty na eet.gov.cz se stavem v docs/sources
 bun run certs:playground  # stáhne sdílené testovací certifikáty do .cache/ (necommitují se)
 bun run test:live         # živé testy proti playgroundu (3 vymyšlené tržby)
 ```
 
-Playground nepřijímá spojení z runnerů GitHubu (SPEC_NOTES §15). Živé testy proto pouštěj
-lokálně z české sítě, nebo nastav self-hosted runner přes proměnnou repozitáře `LIVE_RUNNER`.
+Živé testy proti playgroundu pouštěj lokálně z české sítě; z runnerů GitHubu je playground
+nedostupný (případně self-hosted runner přes proměnnou repozitáře `LIVE_RUNNER`). Golden soubory
+ingestu se přegenerují přes `UPDATE_GOLDEN=1 bun test packages/ingest`.
 
 Offline testy potřebují testovací certifikáty (`bun run certs:playground`); bez nich selžou se
 srozumitelnou hláškou.

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- export from POS -->
+<batch xmlns:v4="http://fs.gov.cz/eet/schema/v4">
+  <v4:Trzba>
+    <v4:Hlavicka prvni_zaslani="0"/>
+    <v4:Data eic_popl="CZ00000019" id_jednotky="11" id_pokl="P1" porad_cis="X&#47;2" dat_trzby="2026-11-14T08:00:00+01:00" celk_trzba="1.00"/>
+  </v4:Trzba>
+  <v4:Trzba>
+    <v4:Data eic_popl="CZ00000019" id_jednotky="11" id_pokl="P1" porad_cis="X/3" dat_trzby="2026-11-15T11:59:00+01:00" celk_trzba="2,00"/>
+  </v4:Trzba>
+  <Data eic_popl='CZ00000019' id_jednotky='11' id_pokl='P1' porad_cis='X/4' dat_trzby='2026-11-15T11:59:00+01:00' celk_trzba='3'/>
+</batch>

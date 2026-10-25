@@ -1,0 +1,12 @@
+{
+  "register": {
+    "eic_popl": "CZ00000019",
+    "id_jednotky": "11",
+    "id_pokl": "KASA-1"
+  },
+  "fieldMap": {
+    "Účtenka": "porad_cis",
+    "Datum": "dat_trzby",
+    "Částka": "celk_trzba"
+  }
+}
