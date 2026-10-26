@@ -61,6 +61,9 @@ Playground EET nepřijímá spojení z runnerů GitHub Actions, proto živé tes
   udržuje release PR se změnou verze a `CHANGELOG.md`.
 - Číslování je semver 0.x: `feat` a rozbíjející změna zvedají minor, `fix` patch. Do 1.0 platí,
   dokud GFŘ neprohlásí rozhraní za stabilní.
+- **Kontrola release PR.** PR otevírá `github-actions[bot]`, proto jeho CI čeká na schválení.
+  V PR klikni na „Approve and run“ (nebo nech release-please běžet s tokenem GitHub App).
+  Rozhodující kontrolou je stejně CI na `main` po sloučení a smoke test binárek ve vydání.
 - **Vydání = sloučení release PR.** Workflow pak:
   1. vytvoří tag `vX.Y.Z` a GitHub Release;
   2. sestaví binárky `eet` pro linux-x64, linux-arm64, darwin-arm64 a windows-x64 a otestuje
