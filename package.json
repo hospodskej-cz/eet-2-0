@@ -22,12 +22,15 @@
     "gen:trust-anchors": "bun scripts/gen-trust-anchors.ts",
     "build:ingest": "bun build packages/ingest/src/index.ts --outdir packages/ingest/dist --target node --format esm",
     "build:queue": "bun build packages/queue/src/index.ts --outdir packages/queue/dist --target node --format esm",
-    "gen:openapi": "bun scripts/gen-openapi.ts && biome format --write docs/openapi.json",
+    "gen:openapi": "bun scripts/gen-openapi.ts",
     "build:binaries": "bun scripts/build-binaries.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",
     "@eet-gateway/core": "workspace:*",
+    "@eet-gateway/ingest": "workspace:*",
+    "@eet-gateway/queue": "workspace:*",
+    "@eet-gateway/server": "workspace:*",
     "@types/bun": "1.4.4",
     "typescript": "7.0.2"
   }

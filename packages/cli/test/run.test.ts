@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { ConfigError } from "@eet-gateway/server";
 import { rejected, scripted, uncertain, verificationOk } from "../../queue/test/helpers.ts";
+import { VERSION } from "../src/run.ts";
 import { eet, fakeIO, fakeQueue } from "./helpers.ts";
 
 const CSV = [
@@ -255,7 +256,7 @@ describe("eet serve and globals", () => {
     expect(none.code).toBe(2);
     expect(none.err).toContain("Příkazy:");
     expect((await eet(io, "--help")).code).toBe(0);
-    expect((await eet(io, "--version")).out).toBe("eet 0.0.0\n");
+    expect((await eet(io, "--version")).out).toBe(`eet ${VERSION}\n`);
     expect((await eet(io, "frobnicate")).code).toBe(2);
     for (const command of ["send", "validate", "serve", "queue", "cert"]) {
       const help = await eet(io, command, "--help");

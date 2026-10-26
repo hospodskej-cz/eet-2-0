@@ -90,3 +90,29 @@ jobs:
       - run: docker build -t eet-gateway:ci .
       - name: Smoke test the container (sends nothing to EET)
         run: scripts/docker-smoke.sh eet-gateway:ci
+
+  examples:
+    name: Integration examples
+    runs-on: ubuntu-latest
+    env:
+      EET_URL: http://localhost:8080
+      EET_API_KEY: examples-key-0123456789
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - name: Start the real API over a fake EET (scripts/examples-server.ts)
+        run: |
+          bun scripts/examples-server.ts 8080 > examples-server.log 2>&1 &
+          for _ in $(seq 1 30); do curl -sf "$EET_URL/health" > /dev/null && exit 0; sleep 1; done
+          cat examples-server.log; exit 1
+      - name: curl
+        run: examples/curl/send.sh
+      - name: PHP
+        run: php examples/php/send.php
+      - name: Python
+        run: python3 examples/python/send.py
+      - name: C#
+        run: dotnet run --project examples/csharp/EetExample

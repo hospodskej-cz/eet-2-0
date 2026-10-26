@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createEetQueue, createMemoryStore } from "@eet-gateway/queue";
 import { input, rejected, scripted, uncertain } from "../../queue/test/helpers.ts";
 import { createApp, type RequestLog } from "../src/app.ts";
+import { VERSION } from "../src/index.ts";
 import { expectSchema, REGISTER_STATUS, setupApp } from "./app-helpers.ts";
 import { API_KEY } from "./helpers.ts";
 
@@ -283,7 +284,7 @@ describe("system", () => {
     const plain = await call("/health", { key: null });
     const body = await plain.json();
     expectSchema("Health", body);
-    expect(body).toEqual({ status: "ok", version: "0.0.0", database: "ok" });
+    expect(body).toEqual({ status: "ok", version: VERSION, database: "ok" });
 
     const deep = await (await call("/health?eet=true", { key: null })).json();
     expectSchema("Health", deep);

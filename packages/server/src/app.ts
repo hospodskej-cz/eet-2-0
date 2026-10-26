@@ -25,6 +25,7 @@ import {
   parseFlag,
   saleStatusCode,
 } from "./http.ts";
+import { VERSION } from "./index.ts";
 import { buildOpenApi } from "./openapi.ts";
 import type { RegisterStatus } from "./registers.ts";
 import type { AttemptSchema } from "./schemas.ts";
@@ -50,6 +51,7 @@ export interface AppOptions {
   readonly checkEndpoint?: ((endpoint: string) => Promise<EndpointCheck>) | undefined;
   /** Throws when the queue database is not usable. */
   readonly ping?: (() => Promise<void>) | undefined;
+  /** Default: this package's version. */
   readonly version?: string | undefined;
   readonly now?: (() => number) | undefined;
   readonly onRequest?: ((entry: RequestLog) => void) | undefined;
@@ -69,7 +71,7 @@ type AttemptBody = ReturnType<(typeof AttemptSchema)["parse"]>;
 export function createApp(options: AppOptions): Hono {
   const { queue } = options;
   const now = options.now ?? Date.now;
-  const version = options.version ?? "0.0.0";
+  const version = options.version ?? VERSION;
   const check = options.checkEndpoint ?? ((endpoint: string) => defaultCheckEndpoint(endpoint));
   const authorized = apiKeyChecker(options.apiKeys);
   const open = options.dev === true && options.apiKeys.length === 0;

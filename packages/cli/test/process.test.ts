@@ -4,6 +4,7 @@ import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { API_KEY, PG_P12, PG_PASSWORD_FILE, tempDir } from "../../server/test/helpers.ts";
+import { VERSION } from "../src/run.ts";
 
 const MAIN = fileURLToPath(new URL("../src/main.ts", import.meta.url));
 const dir = tempDir("eet-cli-");
@@ -41,7 +42,7 @@ async function eet(...args: string[]) {
 }
 
 test("--version", async () => {
-  expect(await eet("--version")).toMatchObject({ code: 0, out: "eet 0.0.0\n" });
+  expect(await eet("--version")).toMatchObject({ code: 0, out: `eet ${VERSION}\n` });
 });
 
 test("validate and queue list against the real configuration", async () => {

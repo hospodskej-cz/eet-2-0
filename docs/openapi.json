@@ -33,7 +33,9 @@
         "operationId": "submitSale",
         "summary": "Submit one sale",
         "description": "Validates the sale, stores it and sends it to EET. Accepts JSON, XML (`<Data>` or `<Trzba>`) and form fields; field names and formats: docs/INGEST.md.",
-        "tags": ["Sales"],
+        "tags": [
+          "Sales"
+        ],
         "security": [
           {
             "apiKey": []
@@ -46,7 +48,10 @@
             "description": "`sync` waits for the first attempt; `async` stores the sale, answers 202 and sends it in the background right away.",
             "schema": {
               "type": "string",
-              "enum": ["sync", "async"],
+              "enum": [
+                "sync",
+                "async"
+              ],
               "default": "sync"
             }
           },
@@ -221,7 +226,9 @@
         "operationId": "submitBatch",
         "summary": "Submit a batch of sales",
         "description": "Meant for resending after an outage and for migration; sales should be sent as they happen (metodika 1.2). Every row is stored and sent on its own.",
-        "tags": ["Sales"],
+        "tags": [
+          "Sales"
+        ],
         "security": [
           {
             "apiKey": []
@@ -234,7 +241,10 @@
             "description": "`sync` waits for the first attempt; `async` stores the sale, answers 202 and sends it in the background right away.",
             "schema": {
               "type": "string",
-              "enum": ["sync", "async"],
+              "enum": [
+                "sync",
+                "async"
+              ],
               "default": "async"
             }
           },
@@ -370,7 +380,9 @@
       "get": {
         "operationId": "getSale",
         "summary": "Current state of a sale",
-        "tags": ["Sales"],
+        "tags": [
+          "Sales"
+        ],
         "security": [
           {
             "apiKey": []
@@ -426,7 +438,9 @@
         "operationId": "getSaleAttempts",
         "summary": "Attempts to send a sale",
         "description": "Every message sent for the sale, with `uuid_zpravy` and `dat_odesl`.",
-        "tags": ["Sales"],
+        "tags": [
+          "Sales"
+        ],
         "security": [
           {
             "apiKey": []
@@ -482,7 +496,9 @@
         "operationId": "retrySale",
         "summary": "Send a stored sale again now",
         "description": "For `queued`, `uncertain` and `rejected` records (e.g. after fixing the certificate). Always `prvni_zaslani=false` after the first attempt.",
-        "tags": ["Sales"],
+        "tags": [
+          "Sales"
+        ],
         "security": [
           {
             "apiKey": []
@@ -585,7 +601,9 @@
       "get": {
         "operationId": "listQueue",
         "summary": "Queue overview",
-        "tags": ["Queue"],
+        "tags": [
+          "Queue"
+        ],
         "security": [
           {
             "apiKey": []
@@ -693,7 +711,9 @@
         "operationId": "listRegisters",
         "summary": "Registers and their certificates",
         "description": "Certificate validity, including a warning 21 days before expiry.",
-        "tags": ["Registers"],
+        "tags": [
+          "Registers"
+        ],
         "security": [
           {
             "apiKey": []
@@ -728,7 +748,9 @@
         "operationId": "validateSales",
         "summary": "Validate sales without sending",
         "description": "Runs the same ingest and register defaults as submitting; nothing is stored or sent.",
-        "tags": ["Sales"],
+        "tags": [
+          "Sales"
+        ],
         "security": [
           {
             "apiKey": []
@@ -847,7 +869,9 @@
       "get": {
         "operationId": "health",
         "summary": "Liveness and readiness",
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "parameters": [
           {
             "name": "eet",
@@ -887,7 +911,9 @@
       "get": {
         "operationId": "openapi",
         "summary": "This OpenAPI document",
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "responses": {
           "200": {
             "description": "OpenAPI 3.1."
@@ -899,7 +925,9 @@
       "get": {
         "operationId": "docs",
         "summary": "API reference (HTML)",
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "responses": {
           "200": {
             "description": "Interactive documentation."
@@ -927,7 +955,10 @@
             "type": "string"
           },
           "povereni_vice_popl": {
-            "type": ["boolean", "string"]
+            "type": [
+              "boolean",
+              "string"
+            ]
           },
           "id_jednotky": {
             "anyOf": [
@@ -969,25 +1000,43 @@
             ]
           },
           "celk_trzba": {
-            "type": ["string", "number"]
+            "type": [
+              "string",
+              "number"
+            ]
           },
           "urceno_cerp_zuct": {
-            "type": ["string", "number"]
+            "type": [
+              "string",
+              "number"
+            ]
           },
           "cerp_zuct": {
-            "type": ["string", "number"]
+            "type": [
+              "string",
+              "number"
+            ]
           },
           "overeni": {
-            "type": ["boolean", "string"]
+            "type": [
+              "boolean",
+              "string"
+            ]
           },
           "prvni_zaslani": {
-            "type": ["boolean", "string"]
+            "type": [
+              "boolean",
+              "string"
+            ]
           },
           "register": {
             "type": "string"
           }
         },
-        "required": ["dat_trzby", "celk_trzba"],
+        "required": [
+          "dat_trzby",
+          "celk_trzba"
+        ],
         "additionalProperties": {}
       },
       "SaleResult": {
@@ -999,7 +1048,14 @@
           },
           "status": {
             "type": "string",
-            "enum": ["accepted", "verification_ok", "rejected", "queued", "uncertain", "invalid"]
+            "enum": [
+              "accepted",
+              "verification_ok",
+              "rejected",
+              "queued",
+              "uncertain",
+              "invalid"
+            ]
           },
           "register": {
             "type": "string"
@@ -1097,13 +1153,21 @@
                 },
                 "source": {
                   "type": "string",
-                  "enum": ["eet", "ingest", "queue"]
+                  "enum": [
+                    "eet",
+                    "ingest",
+                    "queue"
+                  ]
                 },
                 "field": {
                   "type": "string"
                 }
               },
-              "required": ["code", "message", "source"],
+              "required": [
+                "code",
+                "message",
+                "source"
+              ],
               "additionalProperties": false
             }
           },
@@ -1123,7 +1187,10 @@
                   "type": "string"
                 }
               },
-              "required": ["code", "message"],
+              "required": [
+                "code",
+                "message"
+              ],
               "additionalProperties": false
             }
           },
@@ -1163,7 +1230,11 @@
             "type": "string"
           }
         },
-        "required": ["status", "warnings", "attempts"],
+        "required": [
+          "status",
+          "warnings",
+          "attempts"
+        ],
         "additionalProperties": false
       },
       "BatchResult": {
@@ -1294,13 +1365,21 @@
                           },
                           "source": {
                             "type": "string",
-                            "enum": ["eet", "ingest", "queue"]
+                            "enum": [
+                              "eet",
+                              "ingest",
+                              "queue"
+                            ]
                           },
                           "field": {
                             "type": "string"
                           }
                         },
-                        "required": ["code", "message", "source"],
+                        "required": [
+                          "code",
+                          "message",
+                          "source"
+                        ],
                         "additionalProperties": false
                       }
                     },
@@ -1320,7 +1399,10 @@
                             "type": "string"
                           }
                         },
-                        "required": ["code", "message"],
+                        "required": [
+                          "code",
+                          "message"
+                        ],
                         "additionalProperties": false
                       }
                     },
@@ -1360,11 +1442,18 @@
                       "type": "string"
                     }
                   },
-                  "required": ["status", "warnings", "attempts"],
+                  "required": [
+                    "status",
+                    "warnings",
+                    "attempts"
+                  ],
                   "additionalProperties": false
                 }
               },
-              "required": ["row", "result"],
+              "required": [
+                "row",
+                "result"
+              ],
               "additionalProperties": false
             }
           },
@@ -1383,13 +1472,21 @@
                 },
                 "source": {
                   "type": "string",
-                  "enum": ["eet", "ingest", "queue"]
+                  "enum": [
+                    "eet",
+                    "ingest",
+                    "queue"
+                  ]
                 },
                 "field": {
                   "type": "string"
                 }
               },
-              "required": ["code", "message", "source"],
+              "required": [
+                "code",
+                "message",
+                "source"
+              ],
               "additionalProperties": false
             },
             "description": "About the whole source, e.g. CP1250 decoding."
@@ -1409,13 +1506,20 @@
                   "type": "string"
                 }
               },
-              "required": ["code", "message"],
+              "required": [
+                "code",
+                "message"
+              ],
               "additionalProperties": false
             },
             "description": "Non-empty when the source could not be read."
           }
         },
-        "required": ["rows", "warnings", "issues"],
+        "required": [
+          "rows",
+          "warnings",
+          "issues"
+        ],
         "additionalProperties": false
       },
       "ValidationBatch": {
@@ -1515,13 +1619,21 @@
                           },
                           "source": {
                             "type": "string",
-                            "enum": ["eet", "ingest", "queue"]
+                            "enum": [
+                              "eet",
+                              "ingest",
+                              "queue"
+                            ]
                           },
                           "field": {
                             "type": "string"
                           }
                         },
-                        "required": ["code", "message", "source"],
+                        "required": [
+                          "code",
+                          "message",
+                          "source"
+                        ],
                         "additionalProperties": false
                       }
                     },
@@ -1540,16 +1652,26 @@
                             "type": "string"
                           }
                         },
-                        "required": ["code", "message"],
+                        "required": [
+                          "code",
+                          "message"
+                        ],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": ["valid", "warnings", "issues"],
+                  "required": [
+                    "valid",
+                    "warnings",
+                    "issues"
+                  ],
                   "additionalProperties": false
                 }
               },
-              "required": ["row", "result"],
+              "required": [
+                "row",
+                "result"
+              ],
               "additionalProperties": false
             }
           },
@@ -1568,13 +1690,21 @@
                 },
                 "source": {
                   "type": "string",
-                  "enum": ["eet", "ingest", "queue"]
+                  "enum": [
+                    "eet",
+                    "ingest",
+                    "queue"
+                  ]
                 },
                 "field": {
                   "type": "string"
                 }
               },
-              "required": ["code", "message", "source"],
+              "required": [
+                "code",
+                "message",
+                "source"
+              ],
               "additionalProperties": false
             }
           },
@@ -1593,12 +1723,19 @@
                   "type": "string"
                 }
               },
-              "required": ["code", "message"],
+              "required": [
+                "code",
+                "message"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["rows", "warnings", "issues"],
+        "required": [
+          "rows",
+          "warnings",
+          "issues"
+        ],
         "additionalProperties": false
       },
       "AttemptList": {
@@ -1628,7 +1765,10 @@
                 },
                 "environment": {
                   "type": "string",
-                  "enum": ["playground", "production"]
+                  "enum": [
+                    "playground",
+                    "production"
+                  ]
                 },
                 "endpoint": {
                   "type": "string"
@@ -1693,7 +1833,9 @@
             }
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "additionalProperties": false
       },
       "QueuePage": {
@@ -1815,13 +1957,21 @@
                       },
                       "source": {
                         "type": "string",
-                        "enum": ["eet", "ingest", "queue"]
+                        "enum": [
+                          "eet",
+                          "ingest",
+                          "queue"
+                        ]
                       },
                       "field": {
                         "type": "string"
                       }
                     },
-                    "required": ["code", "message", "source"],
+                    "required": [
+                      "code",
+                      "message",
+                      "source"
+                    ],
                     "additionalProperties": false
                   }
                 },
@@ -1841,7 +1991,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["code", "message"],
+                    "required": [
+                      "code",
+                      "message"
+                    ],
                     "additionalProperties": false
                   }
                 },
@@ -1881,7 +2034,11 @@
                   "type": "string"
                 }
               },
-              "required": ["status", "warnings", "attempts"],
+              "required": [
+                "status",
+                "warnings",
+                "attempts"
+              ],
               "additionalProperties": false
             }
           },
@@ -1890,7 +2047,9 @@
             "type": "string"
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "additionalProperties": false
       },
       "RegisterList": {
@@ -1906,7 +2065,10 @@
                 },
                 "environment": {
                   "type": "string",
-                  "enum": ["playground", "production"]
+                  "enum": [
+                    "playground",
+                    "production"
+                  ]
                 },
                 "endpoint": {
                   "type": "string"
@@ -1990,12 +2152,21 @@
                   }
                 }
               },
-              "required": ["id", "environment", "endpoint", "defaults", "timeZone", "certificates"],
+              "required": [
+                "id",
+                "environment",
+                "endpoint",
+                "defaults",
+                "timeZone",
+                "certificates"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "additionalProperties": false
       },
       "Health": {
@@ -2003,14 +2174,20 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["ok", "degraded"]
+            "enum": [
+              "ok",
+              "degraded"
+            ]
           },
           "version": {
             "type": "string"
           },
           "database": {
             "type": "string",
-            "enum": ["ok", "error"]
+            "enum": [
+              "ok",
+              "error"
+            ]
           },
           "eet": {
             "description": "Only with ?eet=true: a CORS preflight to each EET endpoint, cached for 60 s.",
@@ -2039,12 +2216,21 @@
                   "type": "string"
                 }
               },
-              "required": ["endpoint", "reachable", "durationMs", "checkedAt"],
+              "required": [
+                "endpoint",
+                "reachable",
+                "durationMs",
+                "checkedAt"
+              ],
               "additionalProperties": false
             }
           }
         },
-        "required": ["status", "version", "database"],
+        "required": [
+          "status",
+          "version",
+          "database"
+        ],
         "additionalProperties": false
       },
       "Error": {
@@ -2061,11 +2247,16 @@
                 "type": "string"
               }
             },
-            "required": ["code", "message"],
+            "required": [
+              "code",
+              "message"
+            ],
             "additionalProperties": false
           }
         },
-        "required": ["error"],
+        "required": [
+          "error"
+        ],
         "additionalProperties": false
       }
     }

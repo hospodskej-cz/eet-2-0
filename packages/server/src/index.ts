@@ -44,4 +44,4 @@ export {
   ValidationBatchSchema,
 } from "./schemas.ts";
 
-export const VERSION = "0.0.0";
+export const VERSION = "0.0.0"; // x-release-please-version
