@@ -6,7 +6,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!spec", "!test/fixtures", "!**/dist", "!docs/openapi.json"]
+    "includes": [
+      "**",
+      "!spec",
+      "!test/fixtures",
+      "!**/dist",
+      "!docs/openapi.json",
+      "!CHANGELOG.md",
+      "!.release-please-manifest.json"
+    ]
   },
   "formatter": {
     "enabled": true,
