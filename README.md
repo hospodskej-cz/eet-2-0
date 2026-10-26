@@ -1,183 +1,169 @@
-# EET Gateway (pracovní název)
+# EET Gateway
 
-Open-source (MIT) knihovna pro odesílání tržeb do **EET 2.0** (Finanční správa ČR, SOAP rozhraní
-4.1), kterou si kdokoli zabuduje do svého pokladního nebo účetního softwaru. Tržbu přijme
-v libovolném běžném formátu, převede ji na platnou datovou zprávu, podepíše, odešle a vrátí
-normalizovanou odpověď. Integrovat ji půjde jako TypeScript knihovnu (Node 22+, Bun, Deno), jako
-HTTP službu s OpenAPI pro jiné jazyky nebo jako CLI.
+**[English version](README.en.md)**
 
-> An open-source gateway for Czech EET 2.0 sales registration: library, HTTP service and CLI.
-> Full English documentation will follow in phase 7.
+Open-source (MIT) brána pro odesílání tržeb do **EET 2.0** (Finanční správa ČR, SOAP rozhraní
+4.1, běžný provoz od 1. 1. 2027). Tržbu přijme v jakémkoli běžném formátu, převede ji na platnou
+datovou zprávu, podepíše, odešle a vrátí jednotnou odpověď. Každou tržbu nejdřív uloží, takže
+výpadek sítě ani pád procesu nic neztratí. Po výpadku tržby bezpečně doposílá.
 
-**Stav: fáze 6 z 7.**
+Jak ji zapojit do vlastního softwaru:
 
-- Jádro (`packages/core`) umí načíst certifikát z `.p12`, podepsat a odeslat jednu tržbu
-  a ověřit podpis potvrzení; ověřeno živě proti playgroundu.
-- Ingest (`packages/ingest`) převede tržby z objektů, JSON, NDJSON, CSV (UTF-8 i CP1250) a XML
-  na platná data EET.
-- Fronta (`packages/queue`) každou tržbu nejdřív uloží (SQLite v Bunu, Node i Deno), pak odešle
-  a po výpadku bezpečně doposílá. Je idempotentní a nikdy nepošle tutéž tržbu dvakrát jako první
-  odeslání.
-- HTTP API (`packages/server`) s OpenAPI 3.1, autentizací API klíčem a více pokladnami běží
-  jako Docker image nebo přímo v Bunu.
-- CLI `eet` (`packages/cli`) umí odeslat a zkontrolovat soubor, spravovat frontu, zkontrolovat
-  certifikát a spustit službu; jde sestavit jako samostatná binárka pro Linux, macOS a Windows.
+- **HTTP služba** (Docker, samostatná binárka) s OpenAPI 3.1 pro PHP, Python, .NET, Javu a cokoli
+  dalšího;
+- **CLI** `eet` pro soubory, skripty a správu fronty;
+- **TypeScript knihovna** pro Node.js 22.18+, Bun a Deno.
 
-- [docs/SPEC_NOTES.md](docs/SPEC_NOTES.md): výtah z oficiální specifikace s odkazy na zdroje,
-  rozdíly mezi zadáním a zdroji, otevřené otázky, živé ověření (§15)
-- [docs/ADR-001-protocol-core.md](docs/ADR-001-protocol-core.md): protokolové jádro nad
-  `@finitoapp/eet-client`
-- [docs/ADR-002-response-trust.md](docs/ADR-002-response-trust.md): důvěra v podpis potvrzení
-  a čtení X.509
-- [docs/INGEST.md](docs/INGEST.md): vstupní formáty, aliasy polí, pravidla normalizace, kódy
-  varování a chyb
-- [docs/QUEUE.md](docs/QUEUE.md): fronta, stavy, `SaleResult`, idempotence, události, úložiště
-- [docs/ADR-003-queue-retry-policy.md](docs/ADR-003-queue-retry-policy.md): pravidla doposílání
-- [docs/CLI.md](docs/CLI.md): příkazy `eet`, exit kódy, binárky
-- [docs/SERVER.md](docs/SERVER.md): HTTP API, konfigurace, Docker, logy;
-  [docs/openapi.json](docs/openapi.json): OpenAPI 3.1
+> **Stav:** verze 0.x. Odesílání, ověření podpisu, fronta i doposílání jsou ověřené živě proti
+> playgroundu EET, **proti produkci zatím ne**. API se může do 1.0 měnit (semver 0.x, viz
+> [CHANGELOG](CHANGELOG.md)). Balíčky zatím nejsou na npm.
 
-## Vyzkoušej
+## Co umí
 
-Pošle jednu vymyšlenou tržbu na playground EET se sdíleným testovacím certifikátem a vypíše
-výsledek. Playground nic neeviduje a jeho POK (končí `-ff`) nejsou platné.
+- **Vstup v libovolném tvaru:** JSON, NDJSON, CSV (UTF-8 i Windows-1250, `,` i `;`), XML
+  (`<Data>` i celé `<Trzba>`), formulář, JS objekt. Částky s českou čárkou, data s offsetem
+  i bez něj (letní čas), epoch, `dd.mm.yyyy`. Každá úprava vstupu se vrací jako varování, nic
+  se neděje potichu ([INGEST](docs/INGEST.md)).
+- **Bezpečné doposílání:**
+  - každá tržba se nejdřív uloží (SQLite, nebo vlastní úložiště);
+  - po timeoutu, výpadku nebo pádu procesu se doposílá s novým `uuid_zpravy`
+    a `prvni_zaslani=false`, ale se stejnými `<Data>`;
+  - tatáž tržba nikdy nejde dvakrát jako první odeslání;
+  - hlídá se lhůta 48 h (ZoET §20);
+  - pravidla a jejich zdůvodnění popisuje [ADR-003](docs/ADR-003-queue-retry-policy.md).
+- **Idempotence:** opakované volání se stejným `Idempotency-Key`, nebo prostě stejná tržba,
+  vrátí uložený výsledek a nic znovu neodešle.
+- **Více pokladen a certifikátů v jedné instanci.**
+  - Každá pokladna má vlastní `.p12`, včetně starého šifrování testovacích certifikátů.
+  - Během obnovy certifikátu podepisuje ten, který je zrovna platný.
+  - Na konec platnosti služba upozorní 21 dní předem.
+- **Ověření odpovědi:** podpis potvrzení se ověřuje proti CA I.CA a subjektu GFŘ. Nedůvěryhodná
+  odpověď nikdy neskončí jako `accepted` ([ADR-002](docs/ADR-002-response-trust.md)).
+- **Bezpečnost:**
+  - privátní klíč je v paměti jako nevyexportovatelný (`non-extractable`);
+  - hesla k certifikátům nejsou v konfiguraci;
+  - logy neobsahují klíče, hesla ani podpisy;
+  - API vyžaduje klíč;
+  - Docker image běží bez roota.
+
+  Podrobnosti v [SECURITY](SECURITY.md).
+
+## Rychlý start
+
+### HTTP služba (Docker)
+
+Konfigurace podle [`examples/eet.config.example.yaml`](examples/eet.config.example.yaml)
+(pokladny, certifikáty, výchozí `id_jednotky`/`id_pokl`); hesla k `.p12` patří do souboru nebo do
+proměnné prostředí, ne do konfigurace.
 
 ```sh
-bun install
-bun run certs:playground          # jednou: stáhne testovací certifikáty do .cache/playground/
-bun run playground:send           # ostrý mód → "kind": "accepted", POK …-ff
-bun run playground:send --verify  # ověřovací mód → "kind": "verification_ok"
-bun run playground:send --unit 10 # id_jednotky nekončí 1–4 → varování 6
-bun run playground:send --debug   # přidá raw XML požadavku a odpovědi (SignatureValue skryté)
+docker build -t eet-gateway .
+docker run -p 8080:8080 -e EET_API_KEYS=dlouhy-tajny-klic-123 \
+  -v ./eet.config.yaml:/etc/eet/eet.config.yaml:ro -v ./certs:/certs:ro -v eet-data:/data eet-gateway
+
+curl -H "Authorization: Bearer dlouhy-tajny-klic-123" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 2026/0001" \
+  -d '{"porad_cis":"2026/0001","dat_trzby":"2026-11-15T11:58:00+01:00","celk_trzba":"250,00"}' \
+  localhost:8080/v1/sales
+# → 200 {"status":"accepted","pok":"…", "warnings":[…], …}
 ```
 
-Jako knihovna:
+Interaktivní dokumentace API je na `/docs`, OpenAPI na `/openapi.json`
+([docs/openapi.json](docs/openapi.json)). HTTP kódy, konfigurace a provoz:
+[SERVER](docs/SERVER.md).
 
-```ts
-import { createEetTransport, createHeader, formatEetDateTime, loadPkcs12 } from "@eet-gateway/core";
+### CLI
 
-const certificate = await loadPkcs12(p12Bytes, password);
-const transport = createEetTransport({ environment: "playground", certificate });
-const outcome = await transport.send({
-  data: {
-    eic_popl: certificate.info.eic,
-    id_jednotky: "11",
-    id_pokl: "pokladna-1",
-    porad_cis: "2026/0001",
-    dat_trzby: formatEetDateTime(new Date()),
-    celk_trzba: "250.00",
-  },
-  header: createHeader({ prvni_zaslani: true }),
-});
-// outcome.kind: accepted | verification_ok | rejected | not_sent | uncertain
+```sh
+bun run build:binaries native                        # → dist/bin/eet-<os>-<arch> (Release: hotové binárky)
+eet send trzby.csv --config eet.config.yaml          # odešle soubor, výsledek řádek po řádku
+eet validate trzby.csv                               # jen kontrola
+eet queue list --status queued,uncertain             # co čeká na doposlání
+eet queue flush                                      # po výpadku: pošli čekající hned
+eet cert inspect kasa.p12 --password-file heslo.txt  # EIČ, prostředí, platnost
+eet serve                                            # totéž HTTP API jako v Dockeru
 ```
 
-Převod vstupu z vlastního systému (bez odesílání, čistá funkce):
+Všechny příkazy a exit kódy: [CLI](docs/CLI.md).
+
+### Knihovna (TypeScript)
 
 ```ts
-import { normalizeSale, parseSales } from "@eet-gateway/ingest";
-
-const result = normalizeSale(
-  { totalAmount: "1 234,50", saleDateTime: "15.11.2026 11:58", receiptNumber: "2026/0001" },
-  { register: { eic_popl: "CZ00000019", id_jednotky: "11", id_pokl: "KASA-1" } },
-);
-// result.ok → result.sale.data je EetReceiptData pro transport.send(); result.warnings vysvětlí každou úpravu
-
-const batch = parseSales(csvBytes, "csv"); // výsledek pro každý řádek s číslem řádku
-```
-
-S frontou (uložení, odeslání, doposílání po výpadku, idempotence):
-
-```ts
-import { Database } from "bun:sqlite"; // Node, Deno: DatabaseSync z "node:sqlite"
+import { DatabaseSync } from "node:sqlite"; // v Bunu i new Database() z "bun:sqlite"
+import { createEetTransport, loadPkcs12 } from "@eet-gateway/core";
 import { createEetQueue, createSqliteStore } from "@eet-gateway/queue";
 
+const certificate = await loadPkcs12(p12Bytes, password);
 const queue = createEetQueue({
-  store: createSqliteStore(new Database("eet-queue.db")),
+  store: createSqliteStore(new DatabaseSync("eet-queue.db")),
   registers: {
     "kasa-1": {
-      transport,
-      context: { register: { eic_popl: "CZ00000019", id_jednotky: "11", id_pokl: "KASA-1" } },
+      transport: createEetTransport({ environment: "playground", certificate }),
+      context: {
+        register: { eic_popl: certificate.info.eic, id_jednotky: "11", id_pokl: "KASA-1" },
+      },
     },
   },
 });
-queue.start();
+queue.start(); // doposílání na pozadí
 const result = await queue.submit(
   { porad_cis: "2026/0001", dat_trzby: new Date(), celk_trzba: "250,00" },
-  { idempotencyKey: requestId },
+  { idempotencyKey: "2026/0001" },
 );
 // result.status: accepted | verification_ok | rejected | queued | uncertain | invalid
 ```
 
-Jako HTTP služba (pro PHP, Python, .NET, …; konfigurace podle
-[`examples/eet.config.example.yaml`](examples/eet.config.example.yaml)):
+Samostatně jde použít i převod vstupu (`@eet-gateway/ingest`, čisté funkce bez I/O) nebo jen
+protokolové jádro (`@eet-gateway/core`, jedno odeslání). Viz [QUEUE](docs/QUEUE.md) a
+[INGEST](docs/INGEST.md).
 
-```sh
-docker build -t eet-gateway .
-docker run -p 8080:8080 -e EET_API_KEYS=… \
-  -v ./eet.config.yaml:/etc/eet/eet.config.yaml:ro -v ./certs:/certs:ro -v eet-data:/data eet-gateway
+## Integrace z jiných jazyků
 
-curl -H "Authorization: Bearer …" -H "Content-Type: application/json" \
-  -d '{"porad_cis":"2026/0001","dat_trzby":"2026-11-15T11:58:00+01:00","celk_trzba":"250,00"}' \
-  localhost:8080/v1/sales          # → {"status":"accepted","pok":"…", …}
-```
+[`examples/`](examples/README.md) obsahuje příklady s hotovým ošetřením idempotence a odpovědí
+`200`, `202` a `422`:
 
-Dokumentace API běží na `/docs`, OpenAPI na `/openapi.json`.
+- [curl](examples/curl/send.sh);
+- [PHP](examples/php/send.php);
+- [Python](examples/python/send.py);
+- [C#](examples/csharp/EetExample/Program.cs);
+- [Node jako knihovna](examples/node/send.ts).
 
-Z příkazové řádky (stejná konfigurace a fronta):
+CI je spouští proti skutečnému API. Klienta pro libovolný jazyk vygeneruješ z
+[docs/openapi.json](docs/openapi.json).
 
-```sh
-bun run build:binaries native                       # → dist/bin/eet-<os>-<arch>
-eet send trzby.csv --config eet.config.yaml         # odešle soubor, vypíše výsledek řádek po řádku
-eet queue list --status queued,uncertain            # co čeká na doposlání
-eet cert inspect kasa.p12 --password-file heslo.txt # EIČ, prostředí, platnost
-```
+## Dokumentace
 
-## Síťové požadavky
+| Dokument                                                                                                                           | Obsah                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| [SPEC_NOTES](docs/SPEC_NOTES.md)                                                                                                   | Výtah z oficiální specifikace s odkazy, rozdíly, otevřené otázky, živá ověření |
+| [INGEST](docs/INGEST.md)                                                                                                           | Vstupní formáty, aliasy polí, normalizace, kódy varování a chyb                |
+| [QUEUE](docs/QUEUE.md)                                                                                                             | Fronta, stavy, `SaleResult`, idempotence, události, úložiště                   |
+| [SERVER](docs/SERVER.md)                                                                                                           | HTTP API, konfigurace, HTTP kódy, Docker, logy                                 |
+| [CLI](docs/CLI.md)                                                                                                                 | Příkazy `eet`, exit kódy, binárky                                              |
+| [ADR-001](docs/ADR-001-protocol-core.md), [ADR-002](docs/ADR-002-response-trust.md), [ADR-003](docs/ADR-003-queue-retry-policy.md) | Protokolové jádro, důvěra v podpis odpovědi, pravidla doposílání               |
 
-Server, na kterém knihovnu provozuješ, musí mít HTTPS spojení (TLS 1.2+) na endpoint EET.
-Dostupnost není samozřejmá: playground EET nepřijímá spojení z runnerů GitHub Actions
-(SPEC_NOTES §15) a jak filtruje produkce, není zveřejněno. Z cílového prostředí si to ověříš
-takto (pošle jen preflight `OPTIONS`, žádnou tržbu):
+## Síť
 
-```ts
-import { checkEndpoint, EET_PLAYGROUND_ENDPOINT } from "@eet-gateway/core";
-console.log(await checkEndpoint(EET_PLAYGROUND_ENDPOINT)); // { reachable: true, httpStatus: 204, … }
-```
+- Server musí mít HTTPS spojení (TLS 1.2+) na endpoint EET. Playground EET nepřijímá spojení
+  z cloudových runnerů (SPEC_NOTES §15) a jak filtruje produkce, není zveřejněno.
+- Dostupnost z cílového prostředí ověříš přes `GET /health?eet=true` nebo
+  `checkEndpoint()` z `@eet-gateway/core`. Pošle se jen preflight `OPTIONS`, žádná tržba.
+- Produkce vyžaduje nový DNS překlad pro každé spojení. Mimo Docker spouštěj s
+  `BUN_CONFIG_DNS_TIME_TO_LIVE_SECONDS=0` ([SERVER](docs/SERVER.md#síť)).
 
-## Vývoj
+## Balíčky
 
-Potřebuješ [Bun](https://bun.sh) ve verzi z `.bun-version` a `xmllint` (libxml2) pro kontraktní
-testy proti XSD.
+| Balíček           | Účel                                                          |
+| ----------------- | ------------------------------------------------------------- |
+| `packages/core`   | Protokol: podpis, odeslání, ověření odpovědi (`EetTransport`) |
+| `packages/ingest` | Parsery a normalizace vstupů                                  |
+| `packages/queue`  | Perzistentní fronta, doposílání, idempotence                  |
+| `packages/server` | HTTP API v1, OpenAPI 3.1, služba                              |
+| `packages/cli`    | Příkaz `eet`                                                  |
 
-```sh
-bun install
-bun run check             # biome + tsc + bun test
-bun run compat:node       # sestaví core, ingest a queue a ověří, že běží v Node
-bun run gen:openapi       # přegeneruje docs/openapi.json po změně API
-scripts/docker-smoke.sh   # ověří Docker image (docker build -t eet-gateway:dev . předtím)
-bun run build:binaries    # samostatné binárky eet do dist/bin/ (native = jen pro tento stroj)
-scripts/binary-smoke.sh dist/bin/eet-darwin-arm64   # ověří binárku bez odeslání do EET
-bun run spec:drift        # porovná oficiální dokumenty na eet.gov.cz se stavem v docs/sources
-bun run certs:playground  # stáhne sdílené testovací certifikáty do .cache/ (necommitují se)
-bun run test:live         # živé testy proti playgroundu (7 vymyšlených zpráv)
-```
-
-Živé testy proti playgroundu pouštěj lokálně z české sítě; z runnerů GitHubu je playground
-nedostupný (případně self-hosted runner přes proměnnou repozitáře `LIVE_RUNNER`). Golden soubory
-ingestu se přegenerují přes `UPDATE_GOLDEN=1 bun test packages/ingest`.
-
-Offline testy potřebují testovací certifikáty (`bun run certs:playground`); bez nich selžou se
-srozumitelnou hláškou.
-
-| Balíček           | Účel                                           |
-| ----------------- | ---------------------------------------------- |
-| `packages/core`   | protokolová vrstva za rozhraním `EetTransport` |
-| `packages/ingest` | parsery a normalizace vstupů                   |
-| `packages/queue`  | perzistentní fronta a doposílání               |
-| `packages/server` | HTTP API v1 + OpenAPI                          |
-| `packages/cli`    | CLI                                            |
+Vývoj, testy a vydávání: [CONTRIBUTING](CONTRIBUTING.md). Hlášení zranitelností:
+[SECURITY](SECURITY.md).
 
 ## Licence
 
-[MIT](LICENSE)
+[MIT](LICENSE). Projekt není produktem Finanční správy ČR a není s ní nijak spojen.

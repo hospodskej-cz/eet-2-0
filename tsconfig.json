@@ -4,6 +4,6 @@
     "lib": ["ES2023", "DOM"],
     "types": ["bun"]
   },
-  "include": ["packages/*/src", "packages/*/test", "test", "scripts"],
+  "include": ["packages/*/src", "packages/*/test", "test", "scripts", "examples/node"],
   "exclude": ["**/dist", "**/node_modules"]
 }
