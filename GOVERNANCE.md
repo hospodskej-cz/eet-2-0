@@ -8,7 +8,7 @@
 
 - **Správce (maintainer):** schvaluje a slučuje pull requesty, vydává verze, moderuje diskuse
   podle [kodexu chování](CODE_OF_CONDUCT.md) a vyřizuje bezpečnostní hlášení
-  ([SECURITY](SECURITY.md)). Aktuálně: [@milos-gastromind](https://github.com/milos-gastromind)
+  ([SECURITY](SECURITY.md)). Aktuálně: [@milos-podpalcem](https://github.com/milos-podpalcem)
   (viz [CODEOWNERS](.github/CODEOWNERS)).
 - **Přispěvatel (contributor):** kdokoli, kdo pošle issue, pull request nebo odpověď v diskusi
   podle [CONTRIBUTING](CONTRIBUTING.md).
