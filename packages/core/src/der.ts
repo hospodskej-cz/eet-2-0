@@ -85,10 +85,17 @@ export function expectTag(node: DerNode | undefined, tag: number, what: string):
 export function decodeOid(node: DerNode): string {
   const bytes = expectTag(node, DerTag.oid, "OBJECT IDENTIFIER").content;
   if (bytes.length === 0) throw new DerError("empty OID");
+  // Every arc must end on an octet with the high bit clear, must not start with 0x80 (X.690
+  // §8.19.2: that would let several encodings alias one OID) and must stay an exact JS integer.
+  if ((bytes[bytes.length - 1] as number) & 0x80) throw new DerError("unterminated OID arc");
   const parts: number[] = [];
   let value = 0;
+  let arcLength = 0;
   for (const byte of bytes) {
+    if (arcLength === 0 && byte === 0x80) throw new DerError("non-minimal OID arc");
     value = value * 128 + (byte & 0x7f);
+    arcLength++;
+    if (!Number.isSafeInteger(value)) throw new DerError("OID arc too large");
     if ((byte & 0x80) === 0) {
       if (parts.length === 0) {
         const first = value < 80 ? Math.floor(value / 40) : 2;
@@ -97,22 +104,39 @@ export function decodeOid(node: DerNode): string {
         parts.push(value);
       }
       value = 0;
+      arcLength = 0;
     }
   }
   return parts.join(".");
 }
 
+/** One char per octet. A loop instead of `String.fromCharCode(...bytes)`, which overflows the stack. */
+function latin1(bytes: Uint8Array): string {
+  let out = "";
+  for (const byte of bytes) out += String.fromCharCode(byte);
+  return out;
+}
+
 export function decodeString(node: DerNode): string {
   switch (node.tag) {
     case DerTag.utf8String:
-      return new TextDecoder("utf-8", { fatal: true }).decode(node.content);
+      try {
+        return new TextDecoder("utf-8", { fatal: true }).decode(node.content);
+      } catch {
+        throw new DerError("UTF8String is not valid UTF-8");
+      }
     case DerTag.printableString:
     case DerTag.ia5String:
+      if (node.content.some((byte) => byte > 0x7f)) {
+        throw new DerError(`string tag 0x${node.tag.toString(16)} holds a non-ASCII octet`);
+      }
+      return latin1(node.content);
     case DerTag.teletexString:
-      return String.fromCharCode(...node.content);
+      return latin1(node.content);
     case DerTag.bmpString: {
+      if (node.content.length % 2 !== 0) throw new DerError("BMPString of odd length");
       let out = "";
-      for (let i = 0; i + 1 < node.content.length; i += 2) {
+      for (let i = 0; i < node.content.length; i += 2) {
         out += String.fromCharCode(
           ((node.content[i] as number) << 8) | (node.content[i + 1] as number),
         );
@@ -124,9 +148,15 @@ export function decodeString(node: DerNode): string {
   }
 }
 
-/** UTCTime (`YYMMDDHHMMSSZ`) or GeneralizedTime (`YYYYMMDDHHMMSSZ`), as used by RFC 5280. */
+/**
+ * UTCTime (`YYMMDDHHMMSSZ`) or GeneralizedTime (`YYYYMMDDHHMMSSZ`), as used by RFC 5280. Only
+ * real calendar instants are accepted: `Date.UTC` would silently roll month 13 or 30 February
+ * over to the next period, and map years 0–99 to 1900–1999.
+ */
 export function decodeTime(node: DerNode): Date {
-  const text = String.fromCharCode(...node.content);
+  // 15 octets at most; checking first keeps hostile input away from the string conversion.
+  if (node.content.length > 15) throw new DerError("time value too long");
+  const text = latin1(node.content);
   let m: RegExpExecArray | null;
   if (node.tag === DerTag.utcTime) {
     m = /^(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)Z$/.exec(text);
@@ -139,8 +169,29 @@ export function decodeTime(node: DerNode): Date {
   } else {
     throw new DerError(`expected a time, got tag 0x${node.tag.toString(16)}`);
   }
-  const [year, month, day, hour, minute, second] = m.slice(1, 7).map(Number) as number[];
-  return new Date(Date.UTC(year as number, (month as number) - 1, day, hour, minute, second));
+  const [year, month, day, hour, minute, second] = m.slice(1, 7).map(Number) as [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ];
+  if (year < 100) throw new DerError(`implausible year in time ${text}`);
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  date.setUTCHours(hour, minute, second, 0);
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day ||
+    date.getUTCHours() !== hour ||
+    date.getUTCMinutes() !== minute ||
+    date.getUTCSeconds() !== second
+  ) {
+    throw new DerError(`time ${text} is not a valid calendar instant`);
+  }
+  return date;
 }
 
 /** BIT STRING content without the leading "unused bits" octet (must be 0 here). */
