@@ -1,0 +1,32 @@
+{
+  "name": "hospodskej-cz/eet-gateway-client",
+  "description": "Typed PHP client for the EET Gateway HTTP API v1 (Czech EET 2.0). ext-curl, no other dependencies.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": ["eet", "eet2", "czech", "fiscalization", "pos"],
+  "homepage": "https://github.com/hospodskej-cz/eet-2-0/tree/main/clients",
+  "require": {
+    "php": ">=8.1",
+    "ext-curl": "*",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.5 || ^11.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "EetGateway\\Client\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "EetGateway\\Client\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
