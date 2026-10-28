@@ -95,8 +95,62 @@ function classifyFetchError(error: unknown, callerSignal: AbortSignal | undefine
   return { kind: "uncertain", reason: "network" };
 }
 
+// Neither the attributes nor the base64 body may contain "<", so every attempt stops at the next
+// tag. A lazy `[\s\S]*?` scanned to the end of the document for each unterminated opening tag,
+// which is quadratic on a hostile response (debug mode only, but 800 kB took tens of seconds).
 const SIGNATURE_VALUE =
-  /(<(?:[\w.-]+:)?SignatureValue\b[^>]*>)[\s\S]*?(<\/(?:[\w.-]+:)?SignatureValue>)/g;
+  /(<(?:[\w.-]+:)?SignatureValue\b[^<>]*>)[^<]*(<\/(?:[\w.-]+:)?SignatureValue>)/g;
+
+/** Upper bound for the raw response kept in `debug` mode (the protocol library reads 1 MB). */
+const MAX_CAPTURE_BYTES = 1_000_000;
+
+/** Reads at most `limit` bytes of a cloned response, so debug capture cannot buffer a hostile stream. */
+async function captureText(response: Response, limit: number): Promise<string> {
+  const reader = response.clone().body?.getReader();
+  if (reader === undefined) return "";
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (total < limit) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = value.subarray(0, limit - total);
+      chunks.push(chunk);
+      total += chunk.length;
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+/**
+ * The endpoint receives the signed sale data, so it must be https. Plain http is allowed only for
+ * a non-production environment on a loopback address (local stubs and tests). Never echoes the
+ * full URL: it may carry credentials.
+ */
+function assertSafeEndpoint(environment: EetEnvironment, endpoint: string): void {
+  let url: URL;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    throw new TransportConfigError("endpoint is not a valid URL");
+  }
+  if (url.protocol === "https:") return;
+  const host = url.hostname;
+  const loopback =
+    host === "localhost" || host.endsWith(".localhost") || host === "127.0.0.1" || host === "[::1]";
+  if (url.protocol === "http:" && loopback && environment !== "production") return;
+  throw new TransportConfigError(
+    `endpoint must use https (got ${url.protocol}//${host}); plain http is only accepted on loopback outside production`,
+  );
+}
 
 export function redactSignatureValues(xml: string): string {
   return xml.replace(SIGNATURE_VALUE, "$1[redacted]$2");
@@ -140,6 +194,7 @@ export function createEetTransport(options: CreateEetTransportOptions): EetTrans
     throw new TransportConfigError("the production endpoint must be configured explicitly");
   }
   const endpoint = options.endpoint ?? EET_PLAYGROUND_ENDPOINT;
+  assertSafeEndpoint(environment, endpoint);
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   if (!Number.isFinite(timeoutMs) || timeoutMs < MIN_TIMEOUT_MS) {
     throw new TransportConfigError(`timeoutMs must be at least ${MIN_TIMEOUT_MS} (ZoET §19)`);
@@ -169,6 +224,7 @@ export function createEetTransport(options: CreateEetTransportOptions): EetTrans
     const started = performance.now();
     const callerSignal = sendOptions.signal;
     let fetchFailure: FetchFailure | undefined;
+    let requestSent = false;
     let signatureFailure: string | undefined;
     let httpStatus: number | undefined;
     let globalTransactionId: string | undefined;
@@ -194,14 +250,20 @@ export function createEetTransport(options: CreateEetTransportOptions): EetTrans
     const capturingFetch: FetchLike = async (input, init) => {
       if (options.debug) rawRequest = redactSignatureValues(decodeBody(init?.body));
       const signals = [init?.signal, callerSignal].filter((s): s is AbortSignal => s != null);
+      requestSent = true;
       try {
         const response = await baseFetch(input, {
           ...init,
+          // EET never redirects. Following one would re-post the signed sale to another URL
+          // (possibly plain http); the failure is classified as uncertain, the request was sent.
+          redirect: "error",
           ...(signals.length > 0 ? { signal: AbortSignal.any(signals) } : {}),
         });
         httpStatus = response.status;
         globalTransactionId = response.headers.get("x-global-transaction-id") ?? undefined;
-        if (options.debug) rawResponse = redactSignatureValues(await response.clone().text());
+        if (options.debug) {
+          rawResponse = redactSignatureValues(await captureText(response, MAX_CAPTURE_BYTES));
+        }
         return response;
       } catch (error) {
         fetchFailure = classifyFetchError(error, callerSignal);
@@ -240,8 +302,15 @@ export function createEetTransport(options: CreateEetTransportOptions): EetTrans
     }
 
     const result = await client.submit(finitoData.value, finitoHeader.value);
-    if (result.ok) return mapOutcome(result.value, meta());
-    return mapError(result.error, fetchFailure, signatureFailure, meta());
+    if (result.ok) {
+      return mapOutcome(
+        result.value,
+        meta(),
+        header.data.uuid_zpravy,
+        header.data.overeni === true,
+      );
+    }
+    return mapError(result.error, fetchFailure, signatureFailure, requestSent, meta());
   }
 
   function environmentMismatch(
@@ -258,7 +327,37 @@ export function createEetTransport(options: CreateEetTransportOptions): EetTrans
     return undefined;
   }
 
-  function mapOutcome(outcome: EetSubmitOutcome, meta: TransportMeta): TransportOutcome {
+  function mapOutcome(
+    outcome: EetSubmitOutcome,
+    meta: TransportMeta,
+    requestUuid: string,
+    verificationRequested: boolean,
+  ): TransportOutcome {
+    // Only confirmations are signed. Error answers (and the "code 0" of the verification mode)
+    // are not, so they are bound to the request by the echoed uuid_zpravy where the server sends
+    // one, and "code 0" is meaningful only for a message sent in verification mode: otherwise a
+    // proxy or a server bug would turn a live sale into a final verification_ok without a POK.
+    if (
+      outcome.status !== "accepted" &&
+      outcome.uuid !== undefined &&
+      outcome.uuid.toLowerCase() !== requestUuid.toLowerCase()
+    ) {
+      return {
+        kind: "uncertain",
+        reason: "malformed_response",
+        message: "the answer carries a different uuid_zpravy than the request",
+        meta,
+      };
+    }
+    if (outcome.status === "verification" && !verificationRequested) {
+      return {
+        kind: "uncertain",
+        reason: "malformed_response",
+        message:
+          'the answer is the verification-mode "code 0" but the message was not sent for verification',
+        meta,
+      };
+    }
     const mismatch = environmentMismatch(
       outcome.test,
       outcome.status === "accepted" ? outcome.pok : undefined,
@@ -304,6 +403,7 @@ export function createEetTransport(options: CreateEetTransportOptions): EetTrans
     error: EetError,
     fetchFailure: FetchFailure | undefined,
     signatureFailure: string | undefined,
+    requestSent: boolean,
     meta: TransportMeta,
   ): TransportOutcome {
     const notSent = (reason: NotSentReason, message: string): TransportOutcome => ({
@@ -322,7 +422,11 @@ export function createEetTransport(options: CreateEetTransportOptions): EetTrans
       case "EetValidationError":
         throw new Error(`@finitoapp/eet-client rejected validated input: ${error.message}`);
       case "EetMessageTooLargeError":
-        return notSent("too_large", error.message);
+        // The library raises this for the 12 kB request limit (nothing sent) and for an oversized
+        // response (the request is already out and EET may have registered the sale).
+        return requestSent
+          ? uncertain("malformed_response", error.message)
+          : notSent("too_large", error.message);
       case "EetSignerError":
         return notSent("signer", error.message);
       case "EetNetworkError":
