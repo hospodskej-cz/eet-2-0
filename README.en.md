@@ -8,6 +8,11 @@
 [![EET playground: verified 2026-10-25](https://img.shields.io/badge/EET%20playground-verified%202026--10--25-brightgreen)](docs/SPEC_NOTES.md#15-živé-ověření-na-playgroundu)
 [![EET production: not yet verified](https://img.shields.io/badge/EET%20production-not%20yet%20verified-orange)](ROADMAP.md)
 
+> **Unofficial project, no warranty.** This is not a product of, or software approved by, the Czech
+> Financial Administration. The software is provided "as is". Certification, register registration and
+> compliance with the Act on Registration of Sales are each operator's own responsibility. See
+> [Disclaimer](#disclaimer).
+
 An open-source (MIT) gateway for sending sales to the Czech **EET 2.0** (electronic registration
 of sales by the Financial Administration, SOAP interface 4.1, in production from 1 January 2027).
 It takes a sale in any common shape, turns it into a valid data message, signs it, sends it and
@@ -276,6 +281,9 @@ The project is at version 0.x. Before you run it in production, note:
   accounting or legal review.
 - The MIT license provides the software "as is", without any warranty. There is no guarantee
   that using the gateway satisfies ZoET.
+- **Certification is your own responsibility:** obtaining and managing register certificates,
+  registering with the tax administrator and any approval or certification of your own cash register
+  solution rest with the operator. This project handles none of it and guarantees none of it.
 - Check your setup with your tax advisor before going live.
 
 ## Community and project governance
