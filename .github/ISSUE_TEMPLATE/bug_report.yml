@@ -1,0 +1,106 @@
+name: Chyba / Bug report
+description: Něco nefunguje nebo se chová jinak, než dokumentace slibuje. / Something is broken or differs from the docs.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **CS:** Děkujeme za hlášení. Piš česky nebo anglicky.
+        **EN:** Thanks for the report. Czech or English is fine.
+
+        > **Nikdy sem nevkládej certifikáty (`.p12`, `.pem`), soukromé klíče, hesla, API klíče ani data poplatníků.**
+        > **Never paste certificates, private keys, passwords, API keys or taxpayer data.**
+        > Na reprodukci stačí sdílené testovací certifikáty playgroundu. / The shared playground test certificates are enough to reproduce.
+        >
+        > Zranitelnost nehlas tady, ale soukromě přes záložku Security. / Report vulnerabilities privately via the Security tab.
+  - type: input
+    id: version
+    attributes:
+      label: Verze / Version
+      description: "`eet --version`, tag Docker obrazu nebo commit. / `eet --version`, Docker image tag or commit."
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Jak to běží / Runtime
+      options:
+        - Standalone binárka `eet` / standalone `eet` binary
+        - Docker image
+        - HTTP služba z Bun / HTTP service on Bun
+        - Knihovna v Bun / library on Bun
+        - Knihovna v Node.js / library on Node.js
+        - Knihovna v Deno / library on Deno
+        - Jiné / Other
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operační systém a architektura / OS and architecture
+      placeholder: "Ubuntu 24.04 x64, macOS 15 arm64, Windows 11 x64"
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Prostředí EET / EET environment
+      description: Kde se chyba projevila. / Where the problem shows up.
+      options:
+        - Playground (neprodukční / non-production)
+        - Produkce / Production
+        - Jen offline, bez odesílání do EET / Offline only, nothing sent to EET
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Část projektu / Component
+      options:
+        - core (transport, podpis / signing)
+        - ingest (vstupní formáty / input formats)
+        - queue (fronta, doposílání / queue, resending)
+        - server (HTTP API)
+        - cli
+        - dokumentace / docs
+        - Nevím / Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Co se stalo / What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Co jsi čekal(a) / What you expected
+      description: Pokud jde o chování EET, uveď kapitolu oficiálního zdroje. / For EET behaviour, cite the official source chapter.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Postup k zopakování / Steps to reproduce
+      description: Nejmenší příklad, který chybu vyvolá (příkaz, požadavek, vstupní soubor s vymyšlenými daty). / Smallest example that triggers it (command, request, input file with made-up data).
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logy a výstup / Logs and output
+      description: Vymaž hesla, API klíče, certifikáty a skutečné DIČ/EIČ. / Remove passwords, API keys, certificates and real tax IDs.
+      render: text
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Kontrola / Checklist
+      options:
+        - label: Nevložil(a) jsem žádné certifikáty, klíče, hesla ani data poplatníků. / I pasted no certificates, keys, passwords or taxpayer data.
+          required: true
+        - label: Prohledal(a) jsem existující issues. / I searched existing issues.
+          required: true

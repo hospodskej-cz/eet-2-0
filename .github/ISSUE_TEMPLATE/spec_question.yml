@@ -1,0 +1,61 @@
+name: Otázka ke specifikaci EET / EET spec question
+description: Nejasné nebo sporné chování EET, rozpor mezi dokumentací a realitou. / Unclear EET behaviour or a mismatch between docs and reality.
+title: "spec: "
+labels: ["spec-question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **CS:** Fakta o EET se v projektu berou jen z oficiálních zdrojů (viz `docs/SPEC_NOTES.md`). Tady řešíme to, co zdroje neurčují nebo si protiřečí.
+        **EN:** EET facts come only from official sources (see `docs/SPEC_NOTES.md`). Use this form for what the sources leave open or contradict.
+
+        > **Přístupové dokumenty PG a P jsou TLP:AMBER: cituj krátce a odkazuj, nekopíruj je a nevkládej jejich obsah.**
+        > **The PG and P access documents are TLP:AMBER: quote briefly and link, never paste their content.**
+        >
+        > Nevkládej certifikáty, hesla ani data poplatníků. / Never paste certificates, passwords or taxpayer data.
+  - type: textarea
+    id: question
+    attributes:
+      label: Otázka / Question
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Dotčený zdroj a kapitola / Source and chapter
+      description: Např. R §2.2.3, M kap. 6, PG §3.1.5, XSD, WSDL, ZoET § 19. / E.g. R §2.2.3, M ch. 6, PG §3.1.5, XSD, WSDL, ZoET § 19.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: O co jde / Kind
+      options:
+        - Zdroj je nejasný / The source is unclear
+        - Zdroje si protiřečí / Sources contradict each other
+        - Skutečné chování playgroundu se liší od dokumentace / Playground behaviour differs from the docs
+        - Skutečné chování produkce se liší od dokumentace / Production behaviour differs from the docs
+        - Chování projektu neodpovídá zdroji / This project does not match the source
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Prostředí EET, kde jsi to pozoroval(a) / EET environment observed
+      options:
+        - Jen z dokumentace / From documentation only
+        - Playground
+        - Produkce / Production
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Důkaz / Evidence
+      description: Citace (krátká), odkaz, nebo upravená zpráva bez tajných údajů a skutečných DIČ/EIČ. / Short quote, link, or a sanitised message without secrets or real tax IDs.
+      render: text
+  - type: textarea
+    id: impact
+    attributes:
+      label: Dopad na projekt / Impact on this project
+      description: Co by se mělo v chování brány změnit nebo zapsat do SPEC_NOTES §14 (otevřené otázky)? / What should change in the gateway or be recorded in SPEC_NOTES §14 (open questions)?

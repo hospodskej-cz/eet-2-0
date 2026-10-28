@@ -1,0 +1,56 @@
+name: Návrh funkce / Feature request
+description: Nová funkce nebo vylepšení. / A new feature or improvement.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **CS:** Piš česky nebo anglicky. Stabilní API se jen rozšiřuje, nepřečíslovává (viz CONTRIBUTING).
+        **EN:** Czech or English. The stable API is only extended, never renumbered (see CONTRIBUTING).
+
+        > **Nevkládej certifikáty, hesla, API klíče ani data poplatníků. / Do not paste certificates, passwords, API keys or taxpayer data.**
+  - type: textarea
+    id: problem
+    attributes:
+      label: Jaký problém řešíš / The problem
+      description: Co potřebuješ udělat a proč to dnes nejde nebo je to těžké. / What you need to do and why it is hard today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Navrhované řešení / Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Zvažované alternativy / Alternatives considered
+  - type: dropdown
+    id: component
+    attributes:
+      label: Část projektu / Component
+      options:
+        - core
+        - ingest
+        - queue
+        - server (HTTP API)
+        - cli
+        - dokumentace / docs
+        - Nevím / Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Zdroj v dokumentaci EET / Source in the EET documentation
+      description: Pokud se funkce opírá o pravidlo EET, uveď dokument a kapitolu (např. R §3.3.3.12). / If it rests on an EET rule, cite document and chapter.
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Kontrola / Checklist
+      options:
+        - label: Prohledal(a) jsem existující issues a Discussions. / I searched existing issues and Discussions.
+          required: true
+        - label: Případně jsem ochoten/ochotna připravit pull request. / I am willing to work on a pull request (optional).
