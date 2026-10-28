@@ -2,23 +2,39 @@ node_modules/
 dist/
 coverage/
 .cache/
+*.tsbuildinfo
 
 # Secrets — never commit certificates, keys or local configuration.
 *.p12
 *.pfx
 *.pem
 *.key
+*.jks
+*.keystore
+*.p7b
+*.p8
+*.password
 .env
 .env.*
 eet.config.yaml
+eet.config.*.yaml
 !examples/**/eet.config.example.yaml
+certs/
+secrets/
 
 # Local queue databases
 *.sqlite
 *.sqlite-*
+*.sqlite3
 *.db
+*.db-*
 
+# Logs and editor/OS noise
+*.log
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
 
 # Public trust anchors (CA certificates) are vendored on purpose.
 !spec/ca/**
