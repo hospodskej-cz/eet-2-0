@@ -1,6 +1,6 @@
 {
   "name": "@eet-gateway/queue",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Persistent outbound queue with safe resending.",
   "keywords": [
     "eet",

@@ -1,6 +1,6 @@
 {
   "name": "@eet-gateway/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The eet command-line interface over the same core. Needs Bun (or use the standalone binaries from the GitHub Release).",
   "keywords": [
     "eet",
