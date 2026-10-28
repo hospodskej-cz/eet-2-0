@@ -1,0 +1,136 @@
+name: Clients
+
+# Tests of the PHP, Python and C# API clients (clients/) and the drift guard that keeps them in step
+# with docs/openapi.json. Runs only for changes that can affect them.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "clients/**"
+      - "docs/openapi.json"
+      - "scripts/gen-clients.ts"
+      - "scripts/examples-server.ts"
+      - ".github/workflows/clients.yml"
+  pull_request:
+    paths:
+      - "clients/**"
+      - "docs/openapi.json"
+      - "scripts/gen-clients.ts"
+      - "scripts/examples-server.ts"
+      - ".github/workflows/clients.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clients-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    name: Drift guard (clients vs openapi.json)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - run: bun scripts/gen-clients.ts
+
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.13"]
+    defaults:
+      run:
+        working-directory: clients/python
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[test]"
+      - run: python -m pytest -q
+      - name: The package builds
+        run: python -m pip wheel . --no-deps --wheel-dir "$RUNNER_TEMP/wheel"
+
+  php:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.1", "8.3", "8.4"]
+    defaults:
+      run:
+        working-directory: clients/php
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, json, mbstring
+          tools: composer:v2
+          coverage: none
+      - run: composer validate --strict
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: vendor/bin/phpunit
+
+  dotnet:
+    name: .NET 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet test clients/dotnet/EetGateway.Client.sln --configuration Release
+      - name: The package builds
+        run: dotnet pack clients/dotnet/src/EetGateway.Client --configuration Release --output "$RUNNER_TEMP/nupkg"
+
+  integration:
+    name: Against the real gateway (fake EET)
+    runs-on: ubuntu-latest
+    env:
+      EET_URL: http://localhost:8080
+      EET_API_KEY: examples-key-0123456789
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.3"
+          extensions: curl, json, mbstring
+          tools: composer:v2
+          coverage: none
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+      - run: bun install --frozen-lockfile
+      - name: Start the real API over a fake EET (scripts/examples-server.ts)
+        run: |
+          bun scripts/examples-server.ts 8080 > examples-server.log 2>&1 &
+          for _ in $(seq 1 30); do curl -sf "$EET_URL/health" > /dev/null && exit 0; sleep 1; done
+          cat examples-server.log; exit 1
+      - name: Python
+        working-directory: clients/python
+        run: |
+          python -m pip install -e ".[test]"
+          python -m pytest -q tests/test_integration.py
+      - name: PHP
+        working-directory: clients/php
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          vendor/bin/phpunit tests/IntegrationTest.php
+      - name: C#
+        run: dotnet test clients/dotnet/EetGateway.Client.sln --configuration Release --filter "FullyQualifiedName~IntegrationTests"
