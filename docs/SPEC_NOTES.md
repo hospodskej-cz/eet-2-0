@@ -7,6 +7,12 @@ zdroj, ne tento soubor. Změny zdrojů hlídá `bun run spec:drift` (v CI týdn�
 
 Stav k 25. 10. 2026.
 
+**Stav ověření.** Živě ověřeno je jen **neprodukční prostředí (playground)**, viz §15. Produkční
+prostředí je **neověřené**: nemáme produkční podpisový certifikát odpovědí a nevíme, zda produkce
+filtruje zdrojové IP adresy. Co přesně musí ověření produkce pokrýt a jak o něm podat hlášení, je
+na konci §15 („Produkce: neověřeno“). Brána zatím neprošla externím bezpečnostním auditem
+(viz [SECURITY](../SECURITY.md)).
+
 ## 1. Zdroje a zkratky citací
 
 | Zkratka  | Dokument                                                             | Verze | Datum       | Soubor (pod `https://eet.gov.cz/assets/cs/cmsmedia/pro-vyvojare/`)              |
@@ -417,8 +423,8 @@ Playground tedy nejspíš filtruje zdrojové IP adresy (cloud nebo zahraničí).
 neříkají. **Důsledky:**
 
 - Živé testy jsou nástroj správce knihovny. Běží lokálně (`bun run test:live`), případně na
-  self-hosted runneru v síti, odkud je playground dostupný (proměnná repozitáře `LIVE_RUNNER`,
-  viz `.github/workflows/live-playground.yml`).
+  self-hosted runneru v síti, odkud je playground dostupný (štítek runneru `eet-playground`,
+  proměnná repozitáře `LIVE_PLAYGROUND_ENABLED`, viz `docs/live-testing.md`).
 - Jestli produkční `trzbyeet.gov.cz` filtruje zdrojové IP stejně, není známo. Integrátor si to
   ověří z cílového prostředí přes `checkEndpoint()` (OQ8).
 
@@ -430,3 +436,87 @@ tržbu doposlala s novým `uuid_zpravy`, novým `dat_odesl`, `prvni_zaslani=fals
 `ee4c7961-…-ff` pro doposlání). Potvrzuje to R §2.1 (každá přijatá zpráva má vlastní POK)
 a podporuje výchozí `retryUncertain = true` (OQ2). Jestli server obě zprávy uvnitř přiřadí
 k téže tržbě (R §4), z odpovědi zjistit nejde.
+
+### Produkce: neověřeno
+
+Vše v §15 výše je z playgroundu. Na produkčním endpointu (`https://trzbyeet.gov.cz/…`, §3) jsme
+nic neodeslali. **Ověření produkce musí pokrýt přesně tyto body**, všechny převzaté z textu výše
+a z [ADR-002](ADR-002-response-trust.md):
+
+1. **Podpisový certifikát odpovědí.** Podle P §3.3 ho vydává tatáž I.CA jako na PG, ale CN
+   produkčního leafu neznáme (§15, „Podpisový certifikát odpovědí na PG“). Výchozí profil důvěry
+   očekává vydavatele `I.CA Public CA/RSA 06/2022` a `organizationIdentifier = NTRCZ-72080043`
+   (ADR-002 bod 1). Zapsat: subjekt, vydavatele, platnost, SHA-256 certifikátu a SPKI, politiky,
+   a zda potvrzení skončilo jako `accepted`. Jiný vydavatel nebo subjekt znamená, že všechna
+   produkční potvrzení skončí jako `uncertain/signature` (bezpečně) a profil se musí upravit.
+2. **Pokladní certifikát a jeho politika (OID).** Dokumentace uvádí pro produkci
+   `1.2.203.19122063.10.1.102.x.y` (P §3.1.2, neověřeno). U PG se dokumentované OID
+   (`…10.4.102.x.y`) lišilo od skutečného (`…10.2.102.0.1`, §3, §13 bod 11). Zapsat skutečné OID
+   produkčního pokladního certifikátu, jeho vydavatele (očekávaná produkční SubCA
+   `CN=EETv2 NCA SubCA RSA 10/2026`, §3) a to, že `eet cert inspect` ho pozná jako produkční.
+   Prostředí se podle OID nerozlišuje; jde o ověření předpokladu z §3.
+3. **Tvar potvrzení.** Bez `test`, platný POK (nekončí `-ff`), `dat_prij`, případná varování
+   (R §3.4.2). Potvrzení s `test="true"` nebo POK `-ff` z produkčního endpointu je chyba
+   konfigurace, ne `accepted` (§3).
+4. **Filtrování zdrojových IP adres.** Playground filtruje (cloud, zahraničí; §15), zda i produkce,
+   „není známo“. Zapsat, z jaké sítě se volalo (domácí/kancelářská/hosting/cloud, stát),
+   a výsledek `checkEndpoint()` / `GET /health?eet=true`.
+5. **Chování DNS.** Produkce používá DNS balancing a vyžaduje nový překlad pro každé spojení se
+   respektováním TTL (P §2.1; §3). Lokálně ověřeno jen to, že Bun s
+   `BUN_CONFIG_DNS_TIME_TO_LIVE_SECONDS=0` překládá při každém novém spojení (§13 bod 6). Zapsat,
+   jaké IP adresy a TTL produkce vrací a že se po změně překladu spojení nezasekne.
+6. **Ověřovací mód a minimální `dat_trzby`.** Ověřovací mód (`overeni=true`) nic neeviduje, proto
+   je vhodný pro první pokus. Ostrý mód na produkci je právně účinný (§3), tak ho pilot posílá
+   jen s tržbou, která opravdu proběhla. Meze `dat_trzby` pro propustnou kontrolu (1. 11. 2026
+   v přechodném režimu, jinak 1. 1. 2027, §3) a varování, která produkce vrátí, zapsat.
+7. **Doposlání po ztracené odpovědi.** Na PG se doposlání dostalo vlastního POK (§15). Zda se
+   chová stejně i na produkci a zda server obě zprávy přiřadí k téže tržbě (R §4), je neověřeno.
+
+Po prvním úspěšném ověření se výsledek zapíše do §15 jako samostatný záznam s datem, změní se
+„Stav ověření“ na začátku souboru a odpovídající část ADR-002 (Důsledky).
+
+#### Šablona hlášení pilota (zkopíruj do issue)
+
+Nikdy nevkládej certifikáty (`.p12`, PEM), hesla, API klíče, EIČ/DIČ ani jiná data poplatníků
+(viz [SECURITY](../SECURITY.md)). Vyplň, co můžeš; „neznámé“ je platná odpověď.
+
+```markdown
+### Pilot produkce EET: hlášení
+
+- Datum a čas (s časovou zónou):
+- Verze brány (tag vydání nebo commit) a způsob nasazení (Docker / binárka / knihovna):
+- Runtime (Bun / Node / Deno, verze) a OS:
+
+**Síť (bod 4, 5)**
+- Odkud se volalo (domácí / kancelářská / hosting / cloud, stát):
+- Výsledek `GET /health?eet=true` (nebo `checkEndpoint()`):
+- Vrácené IP adresy a TTL pro `trzbyeet.gov.cz` (např. `dig`):
+
+**Pokladní certifikát (bod 2)** — bez klíče a bez EIČ
+- Vydavatel (CN):
+- Politika (OID):
+- `eet cert inspect` hlásí prostředí:
+- Platnost od–do:
+
+**Odeslání (bod 3, 6, 7)**
+- Mód: ověřovací (`overeni=true`) / ostrý
+- HTTP status a `status` výsledku (`accepted` / `verification_ok` / `rejected` / `uncertain` / …):
+- `reason` / `code` / `message`, pokud jsou:
+- Kódy varování:
+- `test` v odpovědi (má být bez `test`) a POK nekončí `-ff`: ano / ne
+- Doba odezvy (`durationMs`):
+- `X-Global-Transaction-Id` (volitelně):
+
+**Podpisový certifikát odpovědi (bod 1)** — pokud jde získat
+- Subjekt (CN, O, `organizationIdentifier`):
+- Vydavatel (CN):
+- Platnost od–do:
+- SHA-256 certifikátu:
+- Politiky (OID):
+- Skončilo potvrzení jako `accepted`, nebo jako `uncertain/signature`? (a s jakým důvodem)
+
+**Poznámky**
+- Cokoli neočekávaného (chyby, timeouty, odlišné chování oproti playgroundu):
+
+- [ ] Hlášení neobsahuje certifikáty, hesla, API klíče, EIČ ani data poplatníků.
+```

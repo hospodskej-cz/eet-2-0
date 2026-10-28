@@ -1,0 +1,18 @@
+# .NET
+bin/
+obj/
+TestResults/
+
+# Python
+__pycache__/
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+.venv/
+
+# PHP
+vendor/
+composer.lock
+.phpunit.cache/
+.phpunit.result.cache

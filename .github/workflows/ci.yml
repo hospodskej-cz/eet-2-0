@@ -34,6 +34,8 @@ jobs:
       - run: bun run lint
       - run: bun run typecheck
       - run: bun test
+      - name: Pack and verify npm tarballs
+        run: bun run pack:packages && bun run verify:packages
 
   core-compat:
     name: Core, ingest, queue on ${{ matrix.runtime.name }}

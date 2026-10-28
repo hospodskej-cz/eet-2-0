@@ -82,21 +82,30 @@ export function parseCertificate(der: Uint8Array): Certificate {
     const fields = readChildren(tbs);
     // version is the optional [0] EXPLICIT field; everything else is positional after it.
     const start = fields[0]?.tag === 0xa0 ? 1 : 0;
-    const [serial, , issuer, validity, subject, spki] = fields.slice(start);
+    const [serial, tbsAlgorithm, issuer, validity, subject, spki] = fields.slice(start);
     const [notBefore, notAfter] = readChildren(expectTag(validity, DerTag.sequence, "Validity"));
     const [alg] = readChildren(expectTag(algNode, DerTag.sequence, "signatureAlgorithm"));
     if (notBefore === undefined || notAfter === undefined)
       throw new DerError("incomplete Validity");
+    const signatureAlgorithm = decodeOid(expectTag(alg, DerTag.oid, "algorithm"));
+    // RFC 5280 §4.1.1.2: the algorithm the CA signed (inside the TBS) must be the one announced
+    // outside it. The outer copy picks the hash we verify with, so they must not diverge.
+    const [tbsAlg] = readChildren(expectTag(tbsAlgorithm, DerTag.sequence, "TBS signature"));
+    if (decodeOid(expectTag(tbsAlg, DerTag.oid, "TBS algorithm")) !== signatureAlgorithm) {
+      throw new DerError("signature algorithm differs between TBSCertificate and Certificate");
+    }
+    const serialContent = expectTag(serial, DerTag.integer, "serialNumber").content;
+    if (serialContent.length === 0) throw new DerError("empty serialNumber");
     return {
       der,
       tbs: tbs.bytes,
-      serialNumber: bytesToHex(expectTag(serial, DerTag.integer, "serialNumber").content),
+      serialNumber: bytesToHex(serialContent),
       issuer: parseName(expectTag(issuer, DerTag.sequence, "issuer")),
       subject: parseName(expectTag(subject, DerTag.sequence, "subject")),
       notBefore: decodeTime(notBefore),
       notAfter: decodeTime(notAfter),
       spki: expectTag(spki, DerTag.sequence, "subjectPublicKeyInfo").bytes,
-      signatureAlgorithm: decodeOid(expectTag(alg, DerTag.oid, "algorithm")),
+      signatureAlgorithm,
       signature: decodeBitString(expectTag(sigNode, DerTag.bitString, "signatureValue")),
     };
   } catch (error) {
@@ -146,5 +155,53 @@ export async function isIssuedBy(certificate: Certificate, issuer: Certificate):
     );
   } catch {
     return false;
+  }
+}
+
+const EXTENSION_BASIC_CONSTRAINTS = "2.5.29.19";
+const EXTENSION_KEY_USAGE = "2.5.29.15";
+const KEY_USAGE_DIGITAL_SIGNATURE = 0x80;
+const KEY_USAGE_NON_REPUDIATION = 0x40;
+
+/**
+ * Why `certificate` may not be used as an end-entity signer, or `undefined` when nothing speaks
+ * against it. Deliberately narrow, not path validation: the issuer is pinned elsewhere, so this
+ * only stops a CA certificate, or a key restricted to other purposes (such as encryption), that
+ * the pinned CA issued to the same organisation from being accepted as the confirmation signer.
+ * Absent extensions mean "unrestricted" (RFC 5280 §4.2.1.3, §4.2.1.9). A malformed extension
+ * block (duplicates, wrong structure) is reported as a problem instead of being skipped.
+ */
+export function signerCertificateProblem(certificate: Certificate): string | undefined {
+  try {
+    const wrapper = readChildren(readNode(certificate.tbs)).find((field) => field.tag === 0xa3);
+    if (wrapper === undefined) return undefined;
+    const extensions = readChildren(
+      expectTag(readChildren(wrapper)[0], DerTag.sequence, "Extensions"),
+    );
+    const seen = new Set<string>();
+    for (const extension of extensions) {
+      const [id, ...rest] = readChildren(expectTag(extension, DerTag.sequence, "Extension"));
+      const oid = decodeOid(expectTag(id, DerTag.oid, "extnID"));
+      if (seen.has(oid)) return `duplicate extension ${oid}`;
+      seen.add(oid);
+      const value = readNode(
+        expectTag(rest[rest.length - 1], DerTag.octetString, "extnValue").content,
+      );
+      if (oid === EXTENSION_BASIC_CONSTRAINTS) {
+        const [ca] = readChildren(expectTag(value, DerTag.sequence, "basicConstraints"));
+        if (ca?.tag === 0x01 && ca.content[0] !== 0x00) {
+          return "certificate is a CA certificate (basicConstraints cA)";
+        }
+      } else if (oid === EXTENSION_KEY_USAGE) {
+        const bits = expectTag(value, DerTag.bitString, "keyUsage").content;
+        if (((bits[1] ?? 0) & (KEY_USAGE_DIGITAL_SIGNATURE | KEY_USAGE_NON_REPUDIATION)) === 0) {
+          return "key usage does not allow digital signatures";
+        }
+      }
+    }
+    return undefined;
+  } catch (error) {
+    if (error instanceof DerError) return `malformed extensions: ${error.message}`;
+    throw error;
   }
 }

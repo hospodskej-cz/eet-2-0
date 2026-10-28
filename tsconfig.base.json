@@ -17,6 +17,14 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@eet-gateway/core": ["./packages/core/src/index.ts"],
+      "@eet-gateway/ingest": ["./packages/ingest/src/index.ts"],
+      "@eet-gateway/queue": ["./packages/queue/src/index.ts"],
+      "@eet-gateway/server": ["./packages/server/src/index.ts"],
+      "@eet-gateway/server/serve": ["./packages/server/src/serve.ts"],
+      "@eet-gateway/cli": ["./packages/cli/src/index.ts"]
+    }
   }
 }

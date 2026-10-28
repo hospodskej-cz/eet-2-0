@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Otázka nebo nápad / Question or idea
+    url: https://github.com/hospodskej-cz/eet-2-0/discussions
+    about: Dotazy k nasazení a integraci patří do Discussions. / Usage questions belong in Discussions.
+  - name: Bezpečnostní zranitelnost / Security vulnerability
+    url: https://github.com/hospodskej-cz/eet-2-0/security/advisories/new
+    about: Hlas soukromě, nikdy ne ve veřejném issue. / Report privately, never in a public issue.

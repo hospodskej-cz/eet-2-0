@@ -1,20 +1,59 @@
 {
   "name": "@eet-gateway/cli",
-  "version": "0.0.0",
-  "private": true,
-  "description": "Command-line interface over the same core.",
+  "version": "0.1.0",
+  "description": "The eet command-line interface over the same core. Needs Bun (or use the standalone binaries from the GitHub Release).",
+  "keywords": [
+    "eet",
+    "eet-2.0",
+    "czech",
+    "czech-republic",
+    "fiscal",
+    "sales-registration",
+    "pos",
+    "cash-register",
+    "cli",
+    "bun"
+  ],
+  "homepage": "https://github.com/hospodskej-cz/eet-2-0#readme",
+  "bugs": {
+    "url": "https://github.com/hospodskej-cz/eet-2-0/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hospodskej-cz/eet-2-0.git",
+    "directory": "packages/cli"
+  },
   "license": "MIT",
   "type": "module",
+  "sideEffects": [
+    "./dist/main.js"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
   },
+  "bin": {
+    "eet": "./dist/main.js"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@eet-gateway/core": "workspace:*",
     "@eet-gateway/ingest": "workspace:*",
     "@eet-gateway/queue": "workspace:*",
     "@eet-gateway/server": "workspace:*"
   },
-  "bin": {
-    "eet": "./src/main.ts"
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }

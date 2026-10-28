@@ -1,44 +1,185 @@
 name: Live playground
 
 # Real round trips against the EET playground with the shared test certificates (three made-up
-# sales per run; the playground registers nothing). Not on push: it depends on an external
-# service and would add noise to it. Tuesday avoids the Thursday 20:00–06:00 maintenance window.
+# sales per run; the playground registers nothing). The result is published as a dated JSON for a
+# shields.io endpoint badge (docs/live-testing.md has the badge URL).
 #
-# pg.trzbyeet.gov.cz does not accept connections from GitHub-hosted runners (verified
-# 2026-10-25: IPv4 TCP connect times out, no IPv6 route; SPEC_NOTES §15). Set the repository
-# variable LIVE_RUNNER to the label of a self-hosted runner that can reach it (e.g. one in CZ);
-# until then the schedule is skipped and manual runs fall back to ubuntu-latest.
+# The playground does not accept connections from GitHub-hosted runners (verified 2026-10-25:
+# IPv4 TCP connect times out, no IPv6 route; SPEC_NOTES §15), so the test job needs a
+# self-hosted runner in a Czech network with the label `eet-playground`. Setup and hardening:
+# docs/live-testing.md.
+#
+# Safety rules for a self-hosted runner (do not weaken them):
+#   - the only triggers are `schedule` and `workflow_dispatch`. There is deliberately no
+#     `pull_request`, `pull_request_target` or `push`, so a fork PR can never reach the runner and
+#     a repository without a runner is never affected;
+#   - the job runs only in hospodskej-cz/eet-2-0 and only from `main`;
+#   - the self-hosted job has `contents: read` and no secrets. Writing the badge happens in a second
+#     job on a GitHub-hosted runner, which receives only a status word and rebuilds the JSON itself.
+#
+# Without a runner the scheduled job stays queued and GitHub cancels it after 24 hours; it never
+# touches pull requests. To keep the schedule quiet until a runner exists, it runs only when the
+# repository variable LIVE_PLAYGROUND_ENABLED is `true`; a manual run always tries.
+# Tuesday avoids the Thursday 20:00–06:00 maintenance window of the playground.
 on:
   schedule:
     - cron: "0 7 * * 2"
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
+
+concurrency:
+  group: live-playground
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   live:
-    if: github.event_name == 'workflow_dispatch' || vars.LIVE_RUNNER != ''
-    runs-on: ${{ vars.LIVE_RUNNER || 'ubuntu-latest' }}
-    timeout-minutes: 10
+    name: Round trips from a Czech network
+    if: >-
+      github.repository == 'hospodskej-cz/eet-2-0' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' || vars.LIVE_PLAYGROUND_ENABLED == 'true')
+    runs-on: [self-hosted, eet-playground]
+    # An environment lets the repository restrict this job to `main` (deployment branch rule), so
+    # that someone with write access cannot dispatch an edited workflow from another branch onto
+    # the runner. See docs/live-testing.md, "Zabezpečení runneru".
+    environment: live-playground
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
       - run: bun install --frozen-lockfile
-      - run: bun run certs:playground
-      # Diagnostics only: shows whether the runner can reach the playground at all (CORS preflight,
-      # rozhraní §2.3.3, answers 204 without sending a sale). Never fails the job by itself.
+
+      # Decides between "the code is wrong" and "this runner cannot reach the playground". The
+      # CORS preflight (rozhraní §2.3.3) answers 204 without sending a sale; curl prints 000 when
+      # no HTTP answer arrived at all.
       - name: Playground reachability
+        id: reach
         run: |
           getent ahosts pg.trzbyeet.gov.cz | awk '{print $1}' | sort -u || echo "DNS: no answer"
+          reachable=no
           for family in -4 -6; do
-            curl $family -sS -o /dev/null --max-time 15 -X OPTIONS \
+            code=$(curl $family -sS -o /dev/null --max-time 15 -X OPTIONS \
               -H "Origin: https://example.org" -H "Access-Control-Request-Method: POST" \
               -H "Access-Control-Request-Headers: Content-Type, SOAPAction" \
-              -w "IPv${family#-}: HTTP %{http_code} ip=%{remote_ip} connect=%{time_connect}s total=%{time_total}s\n" \
-              https://pg.trzbyeet.gov.cz/eet/services/EETServiceSOAP/v4 || echo "IPv${family#-}: curl exit $?"
+              -w '%{http_code}' https://pg.trzbyeet.gov.cz/eet/services/EETServiceSOAP/v4) || code=000
+            echo "IPv${family#-}: HTTP $code"
+            if [ "$code" != "000" ]; then reachable=yes; fi
           done
-          curl -4 -sS -o /dev/null --max-time 15 -w "eet.gov.cz IPv4: HTTP %{http_code} ip=%{remote_ip}\n" https://eet.gov.cz/ || true
-      - run: bun run test:live
+          echo "reachable=$reachable" >> "$GITHUB_OUTPUT"
+
+      - name: Playground certificates (SHA-256 pinned in sources.json)
+        if: steps.reach.outputs.reachable == 'yes'
+        run: bun run certs:playground
+
+      - name: Live tests
+        id: tests
+        if: steps.reach.outputs.reachable == 'yes'
+        run: |
+          set +e
+          bun run test:live 2>&1 | tee live.log
+          echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      # One of three words; the badge job accepts nothing else.
+      - name: Result
+        id: result
+        if: always()
+        env:
+          REACHABLE: ${{ steps.reach.outputs.reachable }}
+          TESTS_EXIT: ${{ steps.tests.outputs.exit }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          if [ "$REACHABLE" = "no" ]; then status=unreachable
+          elif [ "$JOB_STATUS" = "success" ] && [ "$TESTS_EXIT" = "0" ]; then status=passing
+          else status=failing
+          fi
+          mkdir -p result
+          printf '{"status":"%s"}\n' "$status" > result/result.json
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Live playground: $status"
+            echo
+            echo "Reachable from this runner: \`${REACHABLE:-not checked}\`. Test exit code: \`${TESTS_EXIT:-not run}\`."
+            if [ -f live.log ]; then
+              echo
+              echo '```'
+              tail -n 40 live.log
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: live-playground-result
+          path: result/result.json
+          retention-days: 7
+
+      # A red run for wrong behaviour; a runner that merely cannot reach the playground
+      # (maintenance, routing) only warns, and the badge says "unreachable".
+      - name: Fail on a failing run
+        if: always() && steps.result.outputs.status == 'failing'
+        run: |
+          echo "::error::Live tests failed or the job broke before them; see the log above."
+          exit 1
+      - name: Warn when unreachable
+        if: always() && steps.result.outputs.status == 'unreachable'
+        run: echo "::warning::The runner could not reach pg.trzbyeet.gov.cz; no test was run."
+
+  badge:
+    name: Publish badge
+    needs: live
+    if: always() && (needs.live.result == 'success' || needs.live.result == 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        id: download
+        continue-on-error: true
+        with:
+          name: live-playground-result
+          path: result
+      # The job on the self-hosted runner is not trusted with the content of the badge: only the
+      # status word is taken from it, validated, and the JSON is built here.
+      - name: Commit the endpoint JSON to the badges branch
+        run: |
+          status=failing
+          if [ -f result/result.json ]; then
+            status=$(jq -r '.status // "failing"' result/result.json)
+          fi
+          case "$status" in
+            passing) color=brightgreen ;;
+            unreachable) color=lightgrey ;;
+            *) status=failing; color=red ;;
+          esac
+          date=$(date -u +%F)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch --depth=1 origin badges; then
+            git switch -C badges FETCH_HEAD
+          else
+            git switch --orphan badges
+          fi
+          printf '{"schemaVersion":1,"label":"EET playground","message":"%s (%s)","color":"%s","cacheSeconds":3600}\n' \
+            "$status" "$date" "$color" > live-playground.json
+          cat live-playground.json
+          git add live-playground.json
+          if git diff --cached --quiet; then
+            echo "badge JSON unchanged"
+          else
+            git commit -m "chore(badge): live playground $status $date"
+            git push origin badges
+          fi

@@ -2,8 +2,8 @@
 
 HTTP API pro pokladní systémy v libovolném jazyce. Úplný popis operací a schémat je
 v [openapi.json](openapi.json) (OpenAPI 3.1). Běžící služba ho publikuje na `GET /openapi.json`
-a interaktivně na `GET /docs`. Klienty pro PHP, Python, C# a další jazyky jde z dokumentu
-vygenerovat. Za API stojí fronta ([QUEUE](QUEUE.md)) a ingest ([INGEST](INGEST.md)).
+a interaktivně na `GET /docs`. Hotové klienty pro PHP, Python a C# jsou v [`clients/`](../clients/README.md),
+ostatní jazyky jde z dokumentu vygenerovat. Za API stojí fronta ([QUEUE](QUEUE.md)) a ingest ([INGEST](INGEST.md)).
 
 ## Spuštění
 

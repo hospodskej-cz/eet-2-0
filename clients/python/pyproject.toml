@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eet-gateway-client"
+version = "0.1.0"
+description = "Typed Python client for the EET Gateway HTTP API v1 (Czech EET 2.0), standard library only."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+dependencies = []
+keywords = ["eet", "eet2", "czech", "fiscalization", "pos"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/hospodskej-cz/eet-2-0"
+Documentation = "https://github.com/hospodskej-cz/eet-2-0/tree/main/clients"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+eet_gateway_client = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

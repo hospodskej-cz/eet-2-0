@@ -1,4 +1,14 @@
+# Line endings: LF everywhere; the repository is the single source of truth.
+* text=auto eol=lf
+
 # Signed or official XML must stay byte-identical (signatures, recorded SHA-256).
 spec/** -text
 test/fixtures/responses/** -text
 test/fixtures/ingest/input/** -text
+
+# Binary DER certificate (vendored trust anchor)
+*.cer binary
+*.p12 binary
+*.pfx binary
+*.db binary
+*.sqlite binary
