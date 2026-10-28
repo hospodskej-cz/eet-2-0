@@ -31,6 +31,7 @@ LABEL org.opencontainers.image.title="EET Gateway" \
       org.opencontainers.image.documentation="https://github.com/hospodskej-cz/eet-2-0/blob/main/docs/SERVER.md"
 WORKDIR /app
 COPY --from=build /out/server.js /app/server.js
+COPY LICENSE THIRD_PARTY_NOTICES.md /licenses/
 # A named volume mounted here starts out owned by the unprivileged user.
 COPY --from=build --chown=65532:65532 /out-data /data
 ENV EET_CONFIG=/etc/eet/eet.config.yaml \

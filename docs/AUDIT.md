@@ -150,8 +150,6 @@ nezměnily.
 | N1  | Revokace se neověřuje                                                                                                              | rozhodnutí ADR-002; viz R1 v modelu hrozeb                                                       |
 | N2  | `leafPins: []` je „bez pinu“                                                                                                       | oprava by změnila chování API (`ResponseTrust`)                                                  |
 | N3  | Binárky a Docker image obsahují MIT kód `@finitoapp/eet-client` a `zod` bez oznámení třetích stran (`THIRD_PARTY_NOTICES` neexistuje) | soubory mimo rozsah revize: `scripts/build-binaries.ts`, `Dockerfile`, `release.yml`             |
-| N4  | Žádná konfigurace `dependabot.yml`; sledování knihovny je ruční                                                                    | mimo rozsah; návrh v ADR-004                                                                     |
-| N5  | `CONTRIBUTING.md` a `SPEC_NOTES.md` §15 odkazují na proměnnou `LIVE_RUNNER`; workflow nyní používá štítek `eet-playground` a `LIVE_PLAYGROUND_ENABLED` | soubory mimo rozsah; vyžaduje sjednocení textu                                                   |
 | N6  | Knihovna: XML parser bez limitu hloubky, C14N bez instrukcí zpracování a `xml:*` dědičnosti                                        | dopad neprokázán; viz ADR-004                                                                    |
 
 ### Co interní revize nepokryla

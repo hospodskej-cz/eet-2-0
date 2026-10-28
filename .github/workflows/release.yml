@@ -57,6 +57,10 @@ jobs:
           bun-version-file: .bun-version
       - run: bun install --frozen-lockfile
       - run: bun run build:binaries
+      - name: Licence files next to the binaries
+        run: |
+          cp LICENSE THIRD_PARTY_NOTICES.md dist/bin/
+          (cd dist/bin && sha256sum LICENSE THIRD_PARTY_NOTICES.md >> SHA256SUMS)
       - name: SBOM (CycloneDX) of the binaries, listed in SHA256SUMS
         run: |
           bun run gen:sbom

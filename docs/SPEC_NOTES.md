@@ -423,8 +423,8 @@ Playground tedy nejspíš filtruje zdrojové IP adresy (cloud nebo zahraničí).
 neříkají. **Důsledky:**
 
 - Živé testy jsou nástroj správce knihovny. Běží lokálně (`bun run test:live`), případně na
-  self-hosted runneru v síti, odkud je playground dostupný (proměnná repozitáře `LIVE_RUNNER`,
-  viz `.github/workflows/live-playground.yml`).
+  self-hosted runneru v síti, odkud je playground dostupný (štítek runneru `eet-playground`,
+  proměnná repozitáře `LIVE_PLAYGROUND_ENABLED`, viz `docs/live-testing.md`).
 - Jestli produkční `trzbyeet.gov.cz` filtruje zdrojové IP stejně, není známo. Integrátor si to
   ověří z cílového prostředí přes `checkEndpoint()` (OQ8).
 
