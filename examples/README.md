@@ -40,12 +40,14 @@ certifikát stáhne `bun run certs:playground`.
 
 ## Klient z OpenAPI
 
+Hotové vygenerované klienty pro PHP, Python a C# jsou v [`clients/`](../clients/README.md).
+
 Pro jiné jazyky nebo pro typovaného klienta vygeneruj kód z [`docs/openapi.json`](../docs/openapi.json),
 například přes [OpenAPI Generator](https://openapi-generator.tech/):
 
 ```sh
 docker run --rm -v "$PWD:/local" openapitools/openapi-generator-cli generate \
-  -i /local/docs/openapi.json -g php -o /local/build/eet-client-php   # nebo python, csharp, java, go, …
+  -i /local/docs/openapi.json -g java -o /local/build/eet-client-java   # nebo go, kotlin, ruby, …
 ```
 
-Ruční SDK pro jednotlivé jazyky projekt záměrně nevydává; zdrojem pravdy je OpenAPI.
+Zdrojem pravdy je OpenAPI; ručně psané SDK projekt nevydává.
