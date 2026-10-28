@@ -1,14 +1,54 @@
 {
   "name": "@eet-gateway/server",
-  "version": "0.0.0",
-  "private": true,
-  "description": "HTTP API (v1) with OpenAPI 3.1.",
+  "version": "0.1.0",
+  "description": "HTTP API (v1) with OpenAPI 3.1. The root export is a runtime-neutral Hono app; ./serve is the Bun service.",
+  "keywords": [
+    "eet",
+    "eet-2.0",
+    "czech",
+    "czech-republic",
+    "fiscal",
+    "sales-registration",
+    "pos",
+    "cash-register",
+    "http",
+    "api",
+    "openapi",
+    "hono"
+  ],
+  "homepage": "https://github.com/hospodskej-cz/eet-2-0#readme",
+  "bugs": {
+    "url": "https://github.com/hospodskej-cz/eet-2-0/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hospodskej-cz/eet-2-0.git",
+    "directory": "packages/server"
+  },
   "license": "MIT",
   "type": "module",
+  "sideEffects": [
+    "./dist/main.js"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./serve": "./src/serve.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./serve": {
+      "types": "./dist/serve.d.ts",
+      "default": "./dist/serve.js"
+    },
+    "./package.json": "./package.json"
   },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@eet-gateway/core": "workspace:*",
     "@eet-gateway/ingest": "workspace:*",
@@ -19,5 +59,9 @@
   "devDependencies": {
     "@apidevtools/swagger-parser": "13.1.0",
     "ajv": "8.20.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }

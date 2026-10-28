@@ -1,19 +1,55 @@
 {
   "name": "@eet-gateway/queue",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Persistent outbound queue with safe resending.",
+  "keywords": [
+    "eet",
+    "eet-2.0",
+    "czech",
+    "czech-republic",
+    "fiscal",
+    "sales-registration",
+    "pos",
+    "cash-register",
+    "queue",
+    "sqlite",
+    "retry",
+    "idempotency"
+  ],
+  "homepage": "https://github.com/hospodskej-cz/eet-2-0#readme",
+  "bugs": {
+    "url": "https://github.com/hospodskej-cz/eet-2-0/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hospodskej-cz/eet-2-0.git",
+    "directory": "packages/queue"
+  },
   "license": "MIT",
   "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "engines": {
     "node": ">=22.18.0"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@eet-gateway/core": "workspace:*",
     "@eet-gateway/ingest": "workspace:*",
     "zod": "4.6.7"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
