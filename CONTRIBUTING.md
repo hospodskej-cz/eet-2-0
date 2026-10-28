@@ -68,18 +68,66 @@ Playground EET nepřijímá spojení z runnerů GitHub Actions, proto živé tes
   1. vytvoří tag `vX.Y.Z` a GitHub Release;
   2. sestaví binárky `eet` pro linux-x64, linux-arm64, darwin-arm64 a windows-x64 a otestuje
      je na Linuxu, macOS a Windows;
-  3. přiloží je k Release i se `SHA256SUMS`.
+  3. přiloží je k Release se `SHA256SUMS` a SBOM (`eet-gateway.cdx.json`, CycloneDX); ve
+     veřejném repozitáři k nim přidá i atestaci původu (`gh attestation verify <soubor> --repo
+     hospodskej-cz/eet-2-0`);
+  4. sestaví a ověří balíčky pro npm (vždy) a publikuje je (jen s `PUBLISH_NPM=true`);
+  5. nahraje a podepíše Docker image (jen s `PUBLISH_DOCKER=true`).
 - **Verze je na jednom místě.** Drží ji `version.txt`. release-please ji zapíše i do konstant
-  `VERSION` (řádky s `x-release-please-version`) a do `info.version` v `docs/openapi.json`.
-  `package.json` balíčků zůstávají `0.0.0`.
+  `VERSION` (řádky s `x-release-please-version`), do `info.version` v `docs/openapi.json` a do
+  `version` v `package.json` každého balíčku. Všechny balíčky `@eet-gateway/*` mají vždy stejnou
+  verzi jako binárky. Obraz balíčků kontroluje `bun run pack:packages`: skončí chybou, když se
+  verze v některém `package.json` liší od `version.txt`.
 
-**Co ještě chybí k publikaci:**
+## Publikace (npm, Docker, binárky)
 
-- **npm:**
-  - je potřeba rozhodnout jméno a vlastnictví scope (SPEC_NOTES OQ7);
-  - balíčky jsou zatím `private`;
-  - potřeba je sestavení do JS s typy a publikační job.
-- **Docker image do GHCR:** job je připravený. Zapne se proměnnou repozitáře
-  `PUBLISH_DOCKER=true`.
-- **Veřejné repo:** s licencí MIT dává smysl zveřejnit repo a zapnout soukromé hlášení
-  zranitelností ([SECURITY](SECURITY.md)).
+Všechno je připravené v kódu a v `.github/workflows/release.yml`. Zapnout to musí vlastník
+repozitáře, jednorázově, v tomto pořadí:
+
+1. **Zveřejnit repozitář.** npm provenance, atestace a podpis image v Sigstore fungují jen pro
+   veřejné repo. Do té doby se kroky atestace a podpisu samy přeskočí a npm publikace by
+   selhala. Zapnout také soukromé hlášení zranitelností ([SECURITY](SECURITY.md)).
+2. **npm.**
+   1. Na npmjs.com založit organizaci `eet-gateway` (scope `@eet-gateway/*` je volný).
+   2. Důvěryhodného vydavatele (bod 3) se na stránce balíčku nastavuje obvykle až poté, co
+      balíček na npm existuje (ověř, zda to už jde i dřív, třeba příkazem `npm trust`).
+      Pokud ne, publikuj první verzi ručně z čistého checkoutu tagu: `bun run pack:packages`,
+      `bun run verify:packages` a `npm publish dist/npm/<tarball> --access public` v pořadí ze
+      `dist/npm/publish-order.txt`. Tato první verze nemá provenance, další už ano.
+   3. U každého z pěti balíčků (core, ingest, queue, server, cli) v _Settings → Trusted
+      publisher_ přidat GitHub Actions: organizace `hospodskej-cz`, repozitář `eet-2-0`,
+      workflow `release.yml`, bez prostředí.
+   4. Nastavit proměnnou repozitáře `PUBLISH_NPM=true` (Settings → Secrets and variables →
+      Actions → Variables). Žádný `NPM_TOKEN` se nevytváří: job publikuje přes OIDC a
+      `--provenance` přiloží ověřitelný původ (`npm audit signatures`).
+3. **Docker image do GHCR.** Nastavit proměnnou `PUBLISH_DOCKER=true`. Image
+   `ghcr.io/hospodskej-cz/eet-2-0` je pro `linux/amd64` a `linux/arm64`, má SBOM a provenance
+   (BuildKit) a je podepsaný bez klíče přes cosign. Po prvním nahrání nastavit balíček v GHCR
+   jako veřejný a propojit s repozitářem. Ověření:
+
+   ```sh
+   cosign verify ghcr.io/hospodskej-cz/eet-2-0:X.Y.Z \
+     --certificate-identity-regexp '^https://github.com/hospodskej-cz/eet-2-0/\.github/workflows/release\.yml@' \
+     --certificate-oidc-issuer https://token.actions.githubusercontent.com
+   ```
+
+### Balíčky pro npm
+
+- Zdroje i testy se dál berou z `src/` (cesty `@eet-gateway/*` mapuje `tsconfig.base.json`),
+  `exports` v `package.json` ale míří na `dist/`, což je to, co dostane uživatel.
+- `bun run build` přeloží všechny balíčky do `packages/*/dist` (ESM JavaScript + `.d.ts`,
+  `bun run build:core` apod. jen jeden a jeho závislosti).
+- `bun run pack:packages` je navíc zabalí do `dist/npm/*.tgz`. Do tarballu jde `dist/`,
+  `LICENSE`, `README.md` a `package.json`, kde se `workspace:*` změní na `^verze`. Samotné
+  `package.json` v repozitáři `workspace:*` ponechávají a **nikdy se nepublikují přímo**
+  (`npm publish` v adresáři balíčku by `workspace:*` poslal na registr).
+- `bun run verify:packages` tarbally zkontroluje (žádné `workspace:`, shoda verze, existence
+  všech cílů v `exports`/`bin`, žádné zdrojáky ani tajnosti), nainstaluje je do prázdného
+  projektu, spustí kompatibilní smoke testy core, ingest a queue v Node proti nainstalovaným
+  balíčkům, `eet --version` v Bunu a přeloží TypeScript klienta proti `.d.ts`.
+- `core`, `ingest` a `queue` jsou bez Bun API. `server` má kořenový export (aplikace Hono)
+  použitelný i v Node, ale `@eet-gateway/server/serve` a `@eet-gateway/cli` vyžadují Bun
+  (`bun:sqlite`, `Bun.serve`); pro ostatní prostředí jsou tu binárky a Docker.
+- Interní závislosti jsou `^verze` a zámek `bun.lock` eviduje `version` pracovních balíčků.
+  release-please zámek nemění, takže po vydání může `bun install` (bez `--frozen-lockfile`)
+  v `bun.lock` přepsat pole `version`. Stačí to commitnout.
