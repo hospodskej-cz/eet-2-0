@@ -40,9 +40,9 @@ certifikát stáhne `bun run certs:playground`.
 
 ## Klient z OpenAPI
 
-Hotové vygenerované klienty pro PHP, Python a C# jsou v [`clients/`](../clients/README.md).
-
-Pro jiné jazyky nebo pro typovaného klienta vygeneruj kód z [`docs/openapi.json`](../docs/openapi.json),
+Pro PHP, Python a C# jsou v [`clients/`](../clients/README.md) hotové typované klienty, které
+ošetří `200`, `202`, `409` a `422` za tebe. Příklady výše zůstávají bez závislostí, aby ukázaly
+holý HTTP. Pro jiné jazyky vygeneruj kód z [`docs/openapi.json`](../docs/openapi.json),
 například přes [OpenAPI Generator](https://openapi-generator.tech/):
 
 ```sh
@@ -50,4 +50,5 @@ docker run --rm -v "$PWD:/local" openapitools/openapi-generator-cli generate \
   -i /local/docs/openapi.json -g java -o /local/build/eet-client-java   # nebo go, kotlin, ruby, …
 ```
 
-Zdrojem pravdy je OpenAPI; ručně psané SDK projekt nevydává.
+Zdrojem pravdy je OpenAPI; klienty v `clients/` hlídá `scripts/gen-clients.ts`, aby se od něj
+nerozešly.
