@@ -4,9 +4,13 @@
 #   docker run -p 8080:8080 -e EET_API_KEYS=… \
 #     -v ./eet.config.yaml:/etc/eet/eet.config.yaml:ro -v ./certs:/certs:ro -v eet-data:/data eet-gateway
 
-FROM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS build
+# The build stage only produces platform-independent JavaScript, so it always runs on the build
+# machine's own architecture (no emulation when the image is built for linux/arm64 too).
+FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS build
 WORKDIR /src
-COPY package.json bun.lock bunfig.toml ./
+# tsconfig.base.json maps @eet-gateway/* to the workspace sources (package.json "exports" point
+# at the built dist/, which this image does not need).
+COPY package.json bun.lock bunfig.toml tsconfig.base.json ./
 COPY packages/core/package.json packages/core/
 COPY packages/ingest/package.json packages/ingest/
 COPY packages/queue/package.json packages/queue/
@@ -18,6 +22,13 @@ RUN bun build packages/server/src/main.ts --target bun --outfile /out/server.js 
  && mkdir -p /out-data
 
 FROM oven/bun:1.4.4-distroless@sha256:153a951ae40106e125898103e6e990ee0f38e6aee7f561029e26cf9fbed23470
+# Version, revision and creation time labels are added by the release workflow.
+LABEL org.opencontainers.image.title="EET Gateway" \
+      org.opencontainers.image.description="HTTP gateway for sending sales to the Czech EET 2.0" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.source="https://github.com/hospodskej-cz/eet-2-0" \
+      org.opencontainers.image.url="https://github.com/hospodskej-cz/eet-2-0" \
+      org.opencontainers.image.documentation="https://github.com/hospodskej-cz/eet-2-0/blob/main/docs/SERVER.md"
 WORKDIR /app
 COPY --from=build /out/server.js /app/server.js
 # A named volume mounted here starts out owned by the unprivileged user.
