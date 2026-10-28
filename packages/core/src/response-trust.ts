@@ -5,7 +5,7 @@
  * leaf rotates yearly (the playground one expires 2027-06-08), so trust is anchored in the
  * pinned issuing CA plus a subject check; pinning leaves is an optional, stricter extra.
  */
-import { bufferSource, certificateToDer } from "./bytes.ts";
+import { bufferSource, bytesEqual, certificateToDer } from "./bytes.ts";
 import { trustAnchor } from "./certificate.ts";
 import {
   type Certificate,
@@ -14,6 +14,7 @@ import {
   isIssuedBy,
   isValidAt,
   parseCertificate,
+  signerCertificateProblem,
 } from "./x509.ts";
 
 export interface ResponseTrust {
@@ -58,12 +59,25 @@ export function responseTrustFrom(options: {
   };
 }
 
+const RSA_SHA256_ALGORITHM = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+const SHA256_DIGEST_ALGORITHM = "http://www.w3.org/2001/04/xmlenc#sha256";
+
 /** What the protocol library hands to a response verifier (structural subset). */
 export interface ResponseSignatureInput {
   readonly signature: {
     readonly certificates: readonly Uint8Array[];
     readonly signedInfoCanonical: Uint8Array;
     readonly signatureValue: Uint8Array;
+    /**
+     * Optional and checked when present (the protocol library always supplies them): the canonical
+     * `soap:Body`, its `DigestValue` and the announced algorithms. Re-checking them here means a
+     * regression in the library's digest comparison cannot let a swapped body ride on a genuine
+     * signature over `SignedInfo`.
+     */
+    readonly signedBodyCanonical?: Uint8Array | undefined;
+    readonly digestValue?: Uint8Array | undefined;
+    readonly signatureAlgorithm?: string | undefined;
+    readonly digestAlgorithm?: string | undefined;
   };
 }
 
@@ -86,6 +100,31 @@ export function createResponseVerifier(
 
   return {
     async verify(input: ResponseSignatureInput): Promise<boolean> {
+      // A policy without a subject would compare `undefined !== undefined` and trust every
+      // certificate the pinned CA ever issued to anybody.
+      if (
+        typeof trust.subjectOrganizationIdentifier !== "string" ||
+        trust.subjectOrganizationIdentifier === ""
+      ) {
+        return fail("trust policy has no subjectOrganizationIdentifier");
+      }
+      const { signature } = input;
+      if (
+        (signature.signatureAlgorithm !== undefined &&
+          signature.signatureAlgorithm !== RSA_SHA256_ALGORITHM) ||
+        (signature.digestAlgorithm !== undefined &&
+          signature.digestAlgorithm !== SHA256_DIGEST_ALGORITHM)
+      ) {
+        return fail("response uses a signature or digest algorithm other than RSA-SHA256/SHA-256");
+      }
+      if (signature.signedBodyCanonical !== undefined && signature.digestValue !== undefined) {
+        const digest = new Uint8Array(
+          await crypto.subtle.digest("SHA-256", bufferSource(signature.signedBodyCanonical)),
+        );
+        if (!bytesEqual(digest, signature.digestValue)) {
+          return fail("soap:Body does not hash to the signed DigestValue");
+        }
+      }
       const leafDer = input.signature.certificates[0];
       if (leafDer === undefined) return fail("response carries no signing certificate");
       let leaf: Certificate;
@@ -123,6 +162,9 @@ export function createResponseVerifier(
           `signing certificate valid ${leaf.notBefore.toISOString()}–${leaf.notAfter.toISOString()}, not at ${at.toISOString()}`,
         );
       }
+
+      const problem = signerCertificateProblem(leaf);
+      if (problem !== undefined) return fail(`signing certificate unusable: ${problem}`);
 
       if (leaf.subject.organizationIdentifier !== trust.subjectOrganizationIdentifier) {
         return fail(
