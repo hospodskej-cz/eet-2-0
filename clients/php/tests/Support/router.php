@@ -30,9 +30,11 @@ $answer = json_decode((string) file_get_contents($dir . '/answer.json'), true);
 if (($answer['delay'] ?? 0) > 0) {
     usleep((int) round($answer['delay'] * 1_000_000));
 }
-http_response_code((int) $answer['status']);
 foreach ($answer['headers'] as $name => $value) {
     header($name . ': ' . $value);
 }
+// After the headers: sending `Location` turns any non-201/3xx status into 302 (php -S), so the
+// scripted status has to be set last.
+http_response_code((int) $answer['status']);
 echo $answer['body'];
 return true;

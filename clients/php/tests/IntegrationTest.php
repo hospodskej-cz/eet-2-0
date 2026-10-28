@@ -114,13 +114,13 @@ final class IntegrationTest extends TestCase
             $this->client->getSale('does-not-exist');
             self::fail('expected NotFoundException');
         } catch (NotFoundException) {
-            // expected
+            $this->addToAssertionCount(1);
         }
         try {
             (new Client($this->url, 'wrong-key-0123456789'))->listQueue();
             self::fail('expected UnauthorizedException');
         } catch (UnauthorizedException) {
-            // expected
+            $this->addToAssertionCount(1);
         }
     }
 }
