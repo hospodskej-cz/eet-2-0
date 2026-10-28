@@ -9,15 +9,15 @@
 
 ## Kam s čím
 
-| Potřebuješ                                        | Kam                                                                                           |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Potřebuješ                                        | Kam                                                                                          |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Poradit s nasazením, konfigurací, integrací       | [Discussions](https://github.com/hospodskej-cz/eet-2-0/discussions)                          |
-| Nahlásit chybu, kterou jde zopakovat              | [Issues](https://github.com/hospodskej-cz/eet-2-0/issues/new/choose) → Chyba / Bug            |
-| Navrhnout novou funkci                            | [Issues](https://github.com/hospodskej-cz/eet-2-0/issues/new/choose) → Návrh / Feature        |
-| Zeptat se, jak se má EET chovat podle dokumentace | [Issues](https://github.com/hospodskej-cz/eet-2-0/issues/new/choose) → Otázka ke specifikaci  |
-| Nahlásit zranitelnost                             | Soukromě přes záložku Security, viz [SECURITY.md](SECURITY.md)                                |
-| Nahlásit porušení kodexu chování                  | Soukromě, viz [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                                        |
-| Přispět kódem nebo dokumentací                    | [CONTRIBUTING.md](CONTRIBUTING.md)                                                            |
+| Nahlásit chybu, kterou jde zopakovat              | [Issues](https://github.com/hospodskej-cz/eet-2-0/issues/new/choose) → Chyba / Bug           |
+| Navrhnout novou funkci                            | [Issues](https://github.com/hospodskej-cz/eet-2-0/issues/new/choose) → Návrh / Feature       |
+| Zeptat se, jak se má EET chovat podle dokumentace | [Issues](https://github.com/hospodskej-cz/eet-2-0/issues/new/choose) → Otázka ke specifikaci |
+| Nahlásit zranitelnost                             | Soukromě přes záložku Security, viz [SECURITY.md](SECURITY.md)                               |
+| Nahlásit porušení kodexu chování                  | Soukromě, viz [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                                       |
+| Přispět kódem nebo dokumentací                    | [CONTRIBUTING.md](CONTRIBUTING.md)                                                           |
 
 ## Než se zeptáš
 

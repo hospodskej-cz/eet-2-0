@@ -16,29 +16,29 @@ zprávy. Výsledek je právně závazný (POK).
 
 ## Co jsme zjistili
 
-| Otázka                | Zjištění                                                                                                                                                                                                                                                                                   |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Licence               | MIT, soubor `LICENSE` v repozitáři i v balíčku: `Copyright (c) 2026 Finito`. `npm view` hlásí `MIT`, GitHub API `spdx_id: MIT`.                                                                                                                                                            |
-| Vlastník a správce    | GitHub organizace `finitoapp`, repozitář založen 23. 7. 2026. V npm je jediný maintainer `pepakriz` (Josef Kříž, `author` v `package.json`). Členy organizace jsem nezjistil.                                                                                              |
-| Stáří a tempo         | První publikace 25. 7. 2026, pět verzí: 0.0.0 (25. 7.), 0.1.0 (26. 7.), 0.2.0 (27. 7.), 0.3.0 (9. 8.), 0.4.0 (19. 10.). Mezi 0.3.0 a 0.4.0 je 10 týdnů. Poslední commit na `main` 19. 10. 2026.                                                                                             |
-| Commity               | 41 commitů: 30 od `pepakriz`, 11 od `dependabot[bot]`. Žádný jiný člověk nepřispěl.                                                                                                                                                                   |
-| Issues a PR           | Otevřených issues od lidí: 0. Otevřených je 5 PR, všechny od Dependabotu (aktualizace vývojových nástrojů z 13. 9.). Uzavřených PR od člověka: jen vlastní PR autora. 4 hvězdičky, 0 forků.                                                                                                |
-| Bezpečnostní politika | `SECURITY.md` existuje: hlášení e-mailem autora nebo přes GitHub private vulnerability reporting, odpověď „do několika pracovních dnů“. Zveřejněných security advisories: 0. Ochrana větve `main` přes API nezjištěna (404), tedy nenastavená nebo nepřístupná.                              |
-| Závislosti            | **Žádné běhové.** Volitelné peer závislosti `zod ^4` a `react-native-quick-crypto ^1`. Žádné `install` skripty. Balíček má 81 souborů, 971 572 B rozbaleno.                                                                                                                                |
-| Původ publikace       | Publikace přes OIDC trusted publishing. Registr nese SLSA provenance: workflow `.github/workflows/release.yml` ze značky `v0.4.0`, commit `0b23b0f5bd44ae4ba2fccbd105a6ed536d1d3fc7`. Tentýž commit vrací `gh api` pro značku `v0.4.0` v repozitáři. **Podpis Sigstore jsem neověřoval**, jen četl obsah prohlášení. |
+| Otázka                | Zjištění                                                                                                                                                                                                                                                                                                                |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Licence               | MIT, soubor `LICENSE` v repozitáři i v balíčku: `Copyright (c) 2026 Finito`. `npm view` hlásí `MIT`, GitHub API `spdx_id: MIT`.                                                                                                                                                                                         |
+| Vlastník a správce    | GitHub organizace `finitoapp`, repozitář založen 23. 7. 2026. V npm je jediný maintainer `pepakriz` (Josef Kříž, `author` v `package.json`). Členy organizace jsem nezjistil.                                                                                                                                           |
+| Stáří a tempo         | První publikace 25. 7. 2026, pět verzí: 0.0.0 (25. 7.), 0.1.0 (26. 7.), 0.2.0 (27. 7.), 0.3.0 (9. 8.), 0.4.0 (19. 10.). Mezi 0.3.0 a 0.4.0 je 10 týdnů. Poslední commit na `main` 19. 10. 2026.                                                                                                                         |
+| Commity               | 41 commitů: 30 od `pepakriz`, 11 od `dependabot[bot]`. Žádný jiný člověk nepřispěl.                                                                                                                                                                                                                                     |
+| Issues a PR           | Otevřených issues od lidí: 0. Otevřených je 5 PR, všechny od Dependabotu (aktualizace vývojových nástrojů z 13. 9.). Uzavřených PR od člověka: jen vlastní PR autora. 4 hvězdičky, 0 forků.                                                                                                                             |
+| Bezpečnostní politika | `SECURITY.md` existuje: hlášení e-mailem autora nebo přes GitHub private vulnerability reporting, odpověď „do několika pracovních dnů“. Zveřejněných security advisories: 0. Ochrana větve `main` přes API nezjištěna (404), tedy nenastavená nebo nepřístupná.                                                         |
+| Závislosti            | **Žádné běhové.** Volitelné peer závislosti `zod ^4` a `react-native-quick-crypto ^1`. Žádné `install` skripty. Balíček má 81 souborů, 971 572 B rozbaleno.                                                                                                                                                             |
+| Původ publikace       | Publikace přes OIDC trusted publishing. Registr nese SLSA provenance: workflow `.github/workflows/release.yml` ze značky `v0.4.0`, commit `0b23b0f5bd44ae4ba2fccbd105a6ed536d1d3fc7`. Tentýž commit vrací `gh api` pro značku `v0.4.0` v repozitáři. **Podpis Sigstore jsem neověřoval**, jen četl obsah prohlášení.    |
 | Naše připnutí         | `"@finitoapp/eet-client": "0.4.0"` bez `^` v `packages/core` i `packages/ingest`; `bunfig.toml` má `exact = true`; CI používá `bun install --frozen-lockfile`. `bun.lock` nese `sha512-ayeFPTrgvu5Oxf9jBqpWkCvzKesrzxDl3Gc457zxPVJ9g5R6ac6BuoXL+wWNKLywDuZ/aMGGjabfkUClqQLXFA==`, shodné s `dist.integrity` v registru. |
 
 ### Co z knihovny používáme
 
 Z kódu repozitáře (`grep @finitoapp`):
 
-| Import                                                  | Kde                                   | K čemu                                                                       |
-| ------------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
-| `createEetClient` (`submit`)                            | `finito-transport.ts`                 | sestavení, podpis (WS-Security + XMLDSig, Exclusive C14N), odeslání, parsování odpovědi, kontrola digestu těla a uuid u potvrzení |
-| `createCryptoKeySigner`                                 | `certificate.ts`                      | adaptér `CryptoKey` → `EetSigner`                                            |
-| `parsePkcs12`, `pickPrivateKeyCertificate` (`/pkcs12`)  | `certificate.ts`                      | PKCS#12 včetně legacy RC2-40 a 3DES, které Web Crypto neumí                  |
-| `parseEetReceiptData`, `parseHeader` (`/builtin`)       | `finito-transport.ts`                 | validace vstupu v tvaru, který knihovna vyžaduje                             |
-| `serializeUnsignedRequest`, `parseAndVerifyResponse`    | testy ingestu, testy důvěry v odpověď | golden soubory a testy verifieru                                             |
+| Import                                                 | Kde                                   | K čemu                                                                                                                            |
+| ------------------------------------------------------ | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `createEetClient` (`submit`)                           | `finito-transport.ts`                 | sestavení, podpis (WS-Security + XMLDSig, Exclusive C14N), odeslání, parsování odpovědi, kontrola digestu těla a uuid u potvrzení |
+| `createCryptoKeySigner`                                | `certificate.ts`                      | adaptér `CryptoKey` → `EetSigner`                                                                                                 |
+| `parsePkcs12`, `pickPrivateKeyCertificate` (`/pkcs12`) | `certificate.ts`                      | PKCS#12 včetně legacy RC2-40 a 3DES, které Web Crypto neumí                                                                       |
+| `parseEetReceiptData`, `parseHeader` (`/builtin`)      | `finito-transport.ts`                 | validace vstupu v tvaru, který knihovna vyžaduje                                                                                  |
+| `serializeUnsignedRequest`, `parseAndVerifyResponse`   | testy ingestu, testy důvěry v odpověď | golden soubory a testy verifieru                                                                                                  |
 
 Nepoužíváme `/caeet-renewal`, `/react-native`, `/zod` ani vestavěný pinning verifier. Vlastní
 důvěru v odpověď máme v `response-trust.ts` (ADR-002).
@@ -48,11 +48,11 @@ důvěru v odpověď máme v `response-trust.ts` (ADR-002).
 Orientačně podle řádků zkompilovaného (nezminifikovaného, s komentáři) `dist` v balíčku. Není to
 odhad pracnosti, jen velikost toho, co by přibylo:
 
-| Část                                                     | Řádků v `dist` | Poznámka                                                                                         |
-| -------------------------------------------------------- | -------------: | ------------------------------------------------------------------------------------------------ |
-| XML parser, C14N, sestavení požadavku, podpis, odpověď, klient (`src-*.mjs`) | 1 117 | jádro protokolu; z toho C14N asi 70, parser asi 360, parsování odpovědi asi 270, klient asi 70   |
-| PKCS#12 (`pkcs12-*.mjs`)                                 |          1 843 | DES asi 1 000 řádků jsou tabulky, RC2 asi 360, KDF asi 85, ASN.1 a parsování asi 370             |
-| Validátory (`builtin.mjs`)                               |            110 | máme vlastní zod schémata v `schema.ts`; zbývá jen tvar vstupu pro klienta                       |
+| Část                                                                         | Řádků v `dist` | Poznámka                                                                                       |
+| ---------------------------------------------------------------------------- | -------------: | ---------------------------------------------------------------------------------------------- |
+| XML parser, C14N, sestavení požadavku, podpis, odpověď, klient (`src-*.mjs`) |          1 117 | jádro protokolu; z toho C14N asi 70, parser asi 360, parsování odpovědi asi 270, klient asi 70 |
+| PKCS#12 (`pkcs12-*.mjs`)                                                     |          1 843 | DES asi 1 000 řádků jsou tabulky, RC2 asi 360, KDF asi 85, ASN.1 a parsování asi 370           |
+| Validátory (`builtin.mjs`)                                                   |            110 | máme vlastní zod schémata v `schema.ts`; zbývá jen tvar vstupu pro klienta                     |
 
 Nejtěžší a nejrizikovější jsou dvě věci: **kanonizace a pravidla pro XMLDSig** (chyby tu
 neskončí pádem, ale tichým přijetím špatné zprávy) a **legacy PKCS#12** (kryptografie, kterou
@@ -103,15 +103,15 @@ v `spec-drift.yml`, který selže, pokud se změní `maintainers`, `license` neb
 
 Přechod rozhodne správce a zapíše se jako nový ADR. Fork se spouští, pokud nastane aspoň jedno:
 
-| #   | Spouštěč                                                                                                                                                                                  | Okamžitá reakce                                                                                                 |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| 1   | Zranitelnost v knihovně (advisory nebo náš nález), kterou upstream neopraví do **14 dnů** od nahlášení. U přijetí podvržené odpovědi jako `accepted` hned, bez čekání.                     | záplata ve forku, v mezidobu `leafPins` a omezení endpointu                                                      |
-| 2   | Blokující chyba, kterou nejde obejít adaptéry (`fetch`, signer, verifier), bez opravy do **14 dnů** (ADR-001).                                                                              | fork s opravou, PR upstreamu                                                                                     |
-| 3   | Opuštění projektu: repozitář archivován nebo smazán, balíček odpublikován nebo `npm deprecate`, **žádný commit ani vydání déle než 6 měsíců** a zároveň čekající potřebná změna.             | fork z naposledy ověřeného commitu                                                                              |
-| 4   | Změna správy: nový maintainer v npm nebo převod repozitáře. Nová verze se nepřijme, dokud se její rozdíl proti 0.4.0 nezkontroluje celý.                                                    | zůstat na 0.4.0                                                                                                  |
-| 5   | Změna licence v jakékoli nové verzi. Používáme jen verze pod MIT.                                                                                                                          | zůstat na poslední MIT verzi, fork z ní                                                                          |
-| 6   | GFŘ vydá nové rozhraní (např. `/v5`) nebo změní podpisový profil a upstream ho nepodporuje do **30 dnů** od zachycení změny v `spec:drift`.                                                | fork nebo vlastní implementace dotčené části                                                                     |
-| 7   | Publikovaná verze neodpovídá zdroji: chybí provenance, značka neukazuje na commit z provenance, nebo se obsah `dist` liší od sestavení ze značky.                                          | verzi nepřijmout, nahlásit upstreamu                                                                             |
+| #   | Spouštěč                                                                                                                                                                         | Okamžitá reakce                                             |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1   | Zranitelnost v knihovně (advisory nebo náš nález), kterou upstream neopraví do **14 dnů** od nahlášení. U přijetí podvržené odpovědi jako `accepted` hned, bez čekání.           | záplata ve forku, v mezidobu `leafPins` a omezení endpointu |
+| 2   | Blokující chyba, kterou nejde obejít adaptéry (`fetch`, signer, verifier), bez opravy do **14 dnů** (ADR-001).                                                                   | fork s opravou, PR upstreamu                                |
+| 3   | Opuštění projektu: repozitář archivován nebo smazán, balíček odpublikován nebo `npm deprecate`, **žádný commit ani vydání déle než 6 měsíců** a zároveň čekající potřebná změna. | fork z naposledy ověřeného commitu                          |
+| 4   | Změna správy: nový maintainer v npm nebo převod repozitáře. Nová verze se nepřijme, dokud se její rozdíl proti 0.4.0 nezkontroluje celý.                                         | zůstat na 0.4.0                                             |
+| 5   | Změna licence v jakékoli nové verzi. Používáme jen verze pod MIT.                                                                                                                | zůstat na poslední MIT verzi, fork z ní                     |
+| 6   | GFŘ vydá nové rozhraní (např. `/v5`) nebo změní podpisový profil a upstream ho nepodporuje do **30 dnů** od zachycení změny v `spec:drift`.                                      | fork nebo vlastní implementace dotčené části                |
+| 7   | Publikovaná verze neodpovídá zdroji: chybí provenance, značka neukazuje na commit z provenance, nebo se obsah `dist` liší od sestavení ze značky.                                | verzi nepřijmout, nahlásit upstreamu                        |
 
 ### 4. Plán záložní varianty
 

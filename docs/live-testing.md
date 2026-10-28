@@ -52,10 +52,10 @@ nepoužívej.**
 
 Workflow `live-playground.yml` má dvě úlohy:
 
-| Úloha   | Kde běží                                   | Práva tokenu       | Co dělá                                                          |
-| ------- | ------------------------------------------ | ------------------ | ---------------------------------------------------------------- |
-| `live`  | `[self-hosted, eet-playground]`            | `contents: read`   | instalace, kontrola dostupnosti, `bun run test:live`, jedno slovo výsledku |
-| `badge` | GitHub-hosted `ubuntu-latest`              | `contents: write`  | z výsledku vyrobí JSON a zapíše ho do větve `badges`             |
+| Úloha   | Kde běží                        | Práva tokenu      | Co dělá                                                                    |
+| ------- | ------------------------------- | ----------------- | -------------------------------------------------------------------------- |
+| `live`  | `[self-hosted, eet-playground]` | `contents: read`  | instalace, kontrola dostupnosti, `bun run test:live`, jedno slovo výsledku |
+| `badge` | GitHub-hosted `ubuntu-latest`   | `contents: write` | z výsledku vyrobí JSON a zapíše ho do větve `badges`                       |
 
 Runner tedy nikdy nedrží token s právem zápisu a o obsahu odznaku nerozhoduje: úloha `badge`
 převezme jen slovo `passing`, `failing` nebo `unreachable`, ověří ho a JSON si sestaví sama.
@@ -95,7 +95,7 @@ vlastní skupiny runnerů omezené na tento jediný repozitář.
 
 1. V **Settings → Environments** vytvoř prostředí `live-playground` a v **Deployment branches
    and tags** nastav **Selected branches and tags → `main`** (viz níže).
-2. Až je runner online (**Settings → Actions → Runners**, stav *Idle*), zapni týdenní plán:
+2. Až je runner online (**Settings → Actions → Runners**, stav _Idle_), zapni týdenní plán:
    `gh variable set LIVE_PLAYGROUND_ENABLED --body true --repo hospodskej-cz/eet-2-0`.
 3. Spusť poprvé ručně: `gh workflow run live-playground.yml --ref main` a sleduj
    `gh run watch`. První běh vytvoří větev `badges`.
@@ -119,8 +119,8 @@ kompromitovat, a runner nemusí být po jobu čistý
    vyžadující schválení).
 2. **Fork pull request nemá jak se na runner dostat.** Workflow na pull requesty nereaguje
    a podmínka `github.repository == 'hospodskej-cz/eet-2-0'` ho v forku zastaví. K tomu v
-   **Settings → Actions → General** nastav *Fork pull request workflows from outside
-   collaborators* na **Require approval for all outside collaborators**. Je to druhá pojistka
+   **Settings → Actions → General** nastav _Fork pull request workflows from outside
+   collaborators_ na **Require approval for all outside collaborators**. Je to druhá pojistka
    pro případ, že by někdo spouštěč do jiného workflow s týmž štítkem přidal.
 3. **`dispatch` jen z `main`.** Kdo má právo zápisu, může spustit workflow z vlastní větve
    s upraveným souborem. Proto úloha `live` používá `environment: live-playground`
@@ -146,14 +146,20 @@ kompromitovat, a runner nemusí být po jobu čistý
 Úloha `badge` zapisuje do větve `badges` soubor `live-playground.json`:
 
 ```json
-{"schemaVersion":1,"label":"EET playground","message":"passing (2026-10-28)","color":"brightgreen","cacheSeconds":3600}
+{
+  "schemaVersion": 1,
+  "label": "EET playground",
+  "message": "passing (2026-10-28)",
+  "color": "brightgreen",
+  "cacheSeconds": 3600
+}
 ```
 
-| `message`      | Barva         | Význam                                                                              |
-| -------------- | ------------- | ----------------------------------------------------------------------------------- |
-| `passing`      | zelená        | všechny živé testy prošly, odpovědi měly platný podpis                              |
-| `failing`      | červená       | některý test selhal, nebo úloha spadla před testy (instalace, stažení certifikátů)  |
-| `unreachable`  | šedá          | runner se k playgroundu nedostal, žádný test neběžel; to je problém sítě, ne kódu   |
+| `message`     | Barva   | Význam                                                                             |
+| ------------- | ------- | ---------------------------------------------------------------------------------- |
+| `passing`     | zelená  | všechny živé testy prošly, odpovědi měly platný podpis                             |
+| `failing`     | červená | některý test selhal, nebo úloha spadla před testy (instalace, stažení certifikátů) |
+| `unreachable` | šedá    | runner se k playgroundu nedostal, žádný test neběžel; to je problém sítě, ne kódu  |
 
 Datum v závorce je den posledního běhu. Starší než dva týdny znamená, že runner nejspíš neběží.
 

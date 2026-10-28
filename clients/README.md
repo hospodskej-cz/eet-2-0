@@ -6,11 +6,11 @@ Malé, typované klienty pro HTTP API brány (`/v1`, popsané v [`docs/openapi.j
 aby pokladní systémy nemusely skládat HTTP ručně. Pokrývají všechny operace a každý je jeden
 tenký balíček bez závislostí:
 
-| Jazyk  | Balíček                                              | Požadavky                    | Složka                 |
-| ------ | ---------------------------------------------------- | ---------------------------- | ---------------------- |
-| PHP    | `hospodskej-cz/eet-gateway-client` (Composer)        | PHP 8.1+, `ext-curl`         | [`php/`](php)          |
-| Python | `eet-gateway-client` (import `eet_gateway_client`)   | Python 3.9+, jen stdlib      | [`python/`](python)    |
-| C#     | `EetGateway.Client` (NuGet)                          | .NET 8, jen `System.Text.Json` | [`dotnet/`](dotnet)  |
+| Jazyk  | Balíček                                            | Požadavky                      | Složka              |
+| ------ | -------------------------------------------------- | ------------------------------ | ------------------- |
+| PHP    | `hospodskej-cz/eet-gateway-client` (Composer)      | PHP 8.1+, `ext-curl`           | [`php/`](php)       |
+| Python | `eet-gateway-client` (import `eet_gateway_client`) | Python 3.9+, jen stdlib        | [`python/`](python) |
+| C#     | `EetGateway.Client` (NuGet)                        | .NET 8, jen `System.Text.Json` | [`dotnet/`](dotnet) |
 
 Balíčky zatím **nejsou publikované** v Packagistu, PyPI ani NuGetu (postup pro správce je na konci).
 Do té doby je nainstaluj ze složky, viz níže.
@@ -110,13 +110,12 @@ else if (result.Status == SaleStatus.Invalid)
 
 | Odpověď brány | Klient                                                                                                     |
 | ------------- | ---------------------------------------------------------------------------------------------------------- |
-| `200`         | vrátí `SaleResult`: `accepted`, `verification_ok` nebo `rejected` (odmítnutí EET **není** výjimka)          |
-| `202`         | vrátí `SaleResult` se `status` `queued` nebo `uncertain`; `wait_for_sale` se ptá na `GET /v1/sales/{id}`     |
-| `422` (tržba) | vrátí `SaleResult` se `status` `invalid` a `issues`; nic se neodeslalo                                       |
-| `409` (klíč)  | vyhodí `IdempotencyConflict…` s výsledkem uvnitř: `Idempotency-Key` už patří jiné tržbě                      |
+| `200`         | vrátí `SaleResult`: `accepted`, `verification_ok` nebo `rejected` (odmítnutí EET **není** výjimka)         |
+| `202`         | vrátí `SaleResult` se `status` `queued` nebo `uncertain`; `wait_for_sale` se ptá na `GET /v1/sales/{id}`   |
+| `422` (tržba) | vrátí `SaleResult` se `status` `invalid` a `issues`; nic se neodeslalo                                     |
+| `409` (klíč)  | vyhodí `IdempotencyConflict…` s výsledkem uvnitř: `Idempotency-Key` už patří jiné tržbě                    |
 | ostatní chyby | vyhodí typovanou výjimku (`400`, `401`, `404`, `409`, `413`, `415`, `422`, `5xx`) s `error.code` a zprávou |
-| bez odpovědi  | vyhodí `Transport…` (a `…Timeout…` při překročení limitu)                                                    |
-
+| bez odpovědi  | vyhodí `Transport…` (a `…Timeout…` při překročení limitu)                                                  |
 - **Idempotence:** `Idempotency-Key` (1–255 tisknutelných znaků ASCII) je volitelný argument každého
   odeslání. Klient se **nikdy sám neopakuje**; po chybě spojení nebo vypršení limitu zavolej
   totéž znovu se stejným klíčem, brána vrátí uložený výsledek a tržbu nezaeviduje dvakrát.
@@ -197,11 +196,11 @@ Small, typed clients for the gateway's HTTP API (`/v1`, described by
 [`docs/openapi.json`](../docs/openapi.json)), so POS integrators do not have to hand-roll HTTP.
 Each covers every operation and is one thin package with no dependencies:
 
-| Language | Package                                              | Needs                          | Folder                |
-| -------- | ---------------------------------------------------- | ------------------------------ | --------------------- |
-| PHP      | `hospodskej-cz/eet-gateway-client` (Composer)        | PHP 8.1+, `ext-curl`           | [`php/`](php)         |
-| Python   | `eet-gateway-client` (import `eet_gateway_client`)   | Python 3.9+, standard library  | [`python/`](python)   |
-| C#       | `EetGateway.Client` (NuGet)                          | .NET 8, `System.Text.Json`     | [`dotnet/`](dotnet)   |
+| Language | Package                                            | Needs                         | Folder              |
+| -------- | -------------------------------------------------- | ----------------------------- | ------------------- |
+| PHP      | `hospodskej-cz/eet-gateway-client` (Composer)      | PHP 8.1+, `ext-curl`          | [`php/`](php)       |
+| Python   | `eet-gateway-client` (import `eet_gateway_client`) | Python 3.9+, standard library | [`python/`](python) |
+| C#       | `EetGateway.Client` (NuGet)                        | .NET 8, `System.Text.Json`    | [`dotnet/`](dotnet) |
 
 The packages are **not published** to Packagist, PyPI or NuGet yet (maintainer steps are at the
 end). Until then install them from the folder (see **Instalace** above; the commands are the same).
@@ -213,15 +212,14 @@ call `wait_for_sale`.
 
 **What the clients do**
 
-| Gateway answer | Client                                                                                                  |
-| -------------- | ------------------------------------------------------------------------------------------------------- |
-| `200`          | returns a `SaleResult`: `accepted`, `verification_ok` or `rejected` (an EET rejection is **not** an exception) |
-| `202`          | returns a `SaleResult` with `queued` or `uncertain`; `wait_for_sale` polls `GET /v1/sales/{id}`            |
-| `422` (a sale) | returns a `SaleResult` with `invalid` and `issues`; nothing was sent                                       |
-| `409` (a key)  | throws `IdempotencyConflict…` carrying the result: the `Idempotency-Key` belongs to another sale           |
+| Gateway answer | Client                                                                                                          |
+| -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `200`          | returns a `SaleResult`: `accepted`, `verification_ok` or `rejected` (an EET rejection is **not** an exception)  |
+| `202`          | returns a `SaleResult` with `queued` or `uncertain`; `wait_for_sale` polls `GET /v1/sales/{id}`                 |
+| `422` (a sale) | returns a `SaleResult` with `invalid` and `issues`; nothing was sent                                            |
+| `409` (a key)  | throws `IdempotencyConflict…` carrying the result: the `Idempotency-Key` belongs to another sale                |
 | other errors   | throws a typed exception (`400`, `401`, `404`, `409`, `413`, `415`, `422`, `5xx`) with `error.code` and message |
-| no answer      | throws `Transport…` (and `…Timeout…` when the time limit passes)                                           |
-
+| no answer      | throws `Transport…` (and `…Timeout…` when the time limit passes)                                                |
 - **Idempotency:** `Idempotency-Key` (1-255 printable ASCII characters) is an optional argument of
   every submit. The client **never retries on its own**; after a network error or a timeout call
   again with the same key and the gateway returns the stored result without registering the sale

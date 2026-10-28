@@ -18,12 +18,12 @@ Verze 0.x platí podle [STABILITY](docs/STABILITY.md). Aktuální stav a omezen�
 
 1.0 nevyjde jen proto, že uběhl čas. Navrhujeme tato kritéria (plán, ne závazek):
 
-| #   | Kritérium                                                                                                                                                                                                                        | Stav     |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| 1   | **Ověření na produkci.** Aspoň jedno skutečné odeslání na produkční endpoint EET se skutečným produkčním certifikátem, zapsané v [SPEC_NOTES §15](docs/SPEC_NOTES.md#15-živé-ověření-na-playgroundu) včetně výsledku kontrol níže | Plán     |
-| 2   | **Externí bezpečnostní review** vlastní čtečky DER/X.509 a ověření podpisu odpovědi (ADR-002), nálezy vyřešené nebo zdůvodněně přijaté                                                                                              | Plán     |
-| 3   | **Rozhodnutí o revokaci** (CRL/OCSP) zapsané v ADR-002 nebo v novém ADR                                                                                                                                                          | Rozhodnout |
-| 4   | **Stabilní kontrakt.** Pravidla z [STABILITY](docs/STABILITY.md) dodržena po celou dobu 0.x bez nehlášené rozbíjející změny. CONTRIBUTING: do 1.0 platí semver 0.x, dokud GFŘ neprohlásí rozhraní za stabilní | Plán     |
+| #   | Kritérium                                                                                                                                                                                                                         | Stav       |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 1   | **Ověření na produkci.** Aspoň jedno skutečné odeslání na produkční endpoint EET se skutečným produkčním certifikátem, zapsané v [SPEC_NOTES §15](docs/SPEC_NOTES.md#15-živé-ověření-na-playgroundu) včetně výsledku kontrol níže | Plán       |
+| 2   | **Externí bezpečnostní review** vlastní čtečky DER/X.509 a ověření podpisu odpovědi (ADR-002), nálezy vyřešené nebo zdůvodněně přijaté                                                                                            | Plán       |
+| 3   | **Rozhodnutí o revokaci** (CRL/OCSP) zapsané v ADR-002 nebo v novém ADR                                                                                                                                                           | Rozhodnout |
+| 4   | **Stabilní kontrakt.** Pravidla z [STABILITY](docs/STABILITY.md) dodržena po celou dobu 0.x bez nehlášené rozbíjející změny. CONTRIBUTING: do 1.0 platí semver 0.x, dokud GFŘ neprohlásí rozhraní za stabilní                     | Plán       |
 | 5   | **Distribuce.** Rozhodnuté jméno a vlastnictví npm scope a první vydání na npm (SPEC_NOTES OQ7)                                                                                                                                   | Rozhodnout |
 
 ## Plánované položky

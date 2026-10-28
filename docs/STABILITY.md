@@ -17,14 +17,14 @@ CONTRIBUTING.
 Platí pravidlo: **jen přibývá, nic se nepřečísluje ani nemaže.** Rozbíjející změna je v commitu
 označená `!` nebo `BREAKING CHANGE:` a objeví se v CHANGELOGu.
 
-| Oblast                                       | Co přesně                                                                                                                                                                                                                                  | Úroveň                                                                                   |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| **HTTP API v1**                              | Cesty pod `/v1`, jejich metody a parametry, stavové kódy `200`/`202`/`409`/`422`, tvar chyb `{ "error": { "code", "message" } }`, hlavičky `Idempotency-Key`, `Idempotent-Replayed`, `Location` ([SERVER](SERVER.md))                       | **záruka** (CONTRIBUTING); shodu s [openapi.json](openapi.json) hlídá test              |
-| **Kódy varování a chyb**                     | Číselné kódy varování a jejich názvy a řetězcové kódy chyb (`required`, `idempotency_conflict`, `not_retryable`, …) z [INGEST](INGEST.md) a [QUEUE](QUEUE.md). Test `docs.test.ts` hlídá, že jsou v dokumentech všechny                       | **záruka** (CONTRIBUTING)                                                                |
-| **Tvar `SaleResult`**                        | Pole z [QUEUE](QUEUE.md#saleresult) a hodnoty `status`: `accepted`, `verification_ok`, `rejected`, `queued`, `uncertain`, `invalid`. Stejný tvar ve knihovně, HTTP API i CLI                                                                | **záruka** (CONTRIBUTING)                                                                |
-| **Klíče konfigurace a proměnné `EET_*`**     | Klíče v [SERVER](SERVER.md#konfigurace) a v [`eet.config.example.yaml`](../examples/eet.config.example.yaml), včetně pravidla, že heslo do konfigurace nepatří (`password` se odmítne). Neznámý klíč je chyba při startu, proto přejmenování by rozbilo nasazení | záměr: přejmenování a odstranění označíme `!` a uvedeme v CHANGELOGu                     |
-| **CLI příkazy a exit kódy**                  | Příkazy z [CLI](CLI.md) a exit kódy `0`, `1`, `2`, `3`                                                                                                                                                                                     | záměr                                                                                    |
-| **Pravidla doposílání**                      | Doposlání s novým `uuid_zpravy` a `prvni_zaslani=false` a stejnými `<Data>`; nikdy dvakrát jako první odeslání ([ADR-003](ADR-003-queue-retry-policy.md))                                                                                   | záměr; změna pravidla by vyžadovala nový ADR                                             |
+| Oblast                                   | Co přesně                                                                                                                                                                                                                                                        | Úroveň                                                                     |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **HTTP API v1**                          | Cesty pod `/v1`, jejich metody a parametry, stavové kódy `200`/`202`/`409`/`422`, tvar chyb `{ "error": { "code", "message" } }`, hlavičky `Idempotency-Key`, `Idempotent-Replayed`, `Location` ([SERVER](SERVER.md))                                            | **záruka** (CONTRIBUTING); shodu s [openapi.json](openapi.json) hlídá test |
+| **Kódy varování a chyb**                 | Číselné kódy varování a jejich názvy a řetězcové kódy chyb (`required`, `idempotency_conflict`, `not_retryable`, …) z [INGEST](INGEST.md) a [QUEUE](QUEUE.md). Test `docs.test.ts` hlídá, že jsou v dokumentech všechny                                          | **záruka** (CONTRIBUTING)                                                  |
+| **Tvar `SaleResult`**                    | Pole z [QUEUE](QUEUE.md#saleresult) a hodnoty `status`: `accepted`, `verification_ok`, `rejected`, `queued`, `uncertain`, `invalid`. Stejný tvar ve knihovně, HTTP API i CLI                                                                                     | **záruka** (CONTRIBUTING)                                                  |
+| **Klíče konfigurace a proměnné `EET_*`** | Klíče v [SERVER](SERVER.md#konfigurace) a v [`eet.config.example.yaml`](../examples/eet.config.example.yaml), včetně pravidla, že heslo do konfigurace nepatří (`password` se odmítne). Neznámý klíč je chyba při startu, proto přejmenování by rozbilo nasazení | záměr: přejmenování a odstranění označíme `!` a uvedeme v CHANGELOGu       |
+| **CLI příkazy a exit kódy**              | Příkazy z [CLI](CLI.md) a exit kódy `0`, `1`, `2`, `3`                                                                                                                                                                                                           | záměr                                                                      |
+| **Pravidla doposílání**                  | Doposlání s novým `uuid_zpravy` a `prvni_zaslani=false` a stejnými `<Data>`; nikdy dvakrát jako první odeslání ([ADR-003](ADR-003-queue-retry-policy.md))                                                                                                        | záměr; změna pravidla by vyžadovala nový ADR                               |
 
 Klienti by měli **snést nové hodnoty**: nové kódy varování a chyb, nové hodnoty `reason` a nová
 pole v odpovědích mohou přibýt i v minor verzi a nepovažují se za rozbíjející změnu.
@@ -59,12 +59,12 @@ Bez předchozí deprekace, v libovolné minor verzi (bude v CHANGELOGu, ale nemu
 Verzi drží `version.txt` a vydání vytváří release-please podle Conventional Commits
 ([CONTRIBUTING](../CONTRIBUTING.md#commity-a-vydání)).
 
-| Změna                                                          | Do 1.0 (0.x)                     | Od 1.0 (záměr)  |
-| -------------------------------------------------------------- | -------------------------------- | --------------- |
-| Rozbíjející změna (`!` / `BREAKING CHANGE:`)                   | minor (0.**N**.0)                | major (**N**.0.0) |
-| Nová funkce (`feat`), nový kód, nové pole                      | minor                            | minor           |
-| Oprava (`fix`)                                                 | patch                            | patch           |
-| Dokumentace, CI, testy                                         | bez vlivu na verzi nebo patch    | totéž           |
+| Změna                                        | Do 1.0 (0.x)                  | Od 1.0 (záměr)    |
+| -------------------------------------------- | ----------------------------- | ----------------- |
+| Rozbíjející změna (`!` / `BREAKING CHANGE:`) | minor (0.**N**.0)             | major (**N**.0.0) |
+| Nová funkce (`feat`), nový kód, nové pole    | minor                         | minor             |
+| Oprava (`fix`)                               | patch                         | patch             |
+| Dokumentace, CI, testy                       | bez vlivu na verzi nebo patch | totéž             |
 
 Platí jedna verze pro celý repozitář (balíčky, služba, binárky a `info.version` v
 `openapi.json` mají stejné číslo). Balíčky nejsou na npm ([README](../README.md#balíčky)).
@@ -86,12 +86,11 @@ Toto je pravidlo projektu, ne technický mechanismus:
 
 ## Podporované runtimy
 
-| Runtime               | Verze                                                                 | Co se v CI ověřuje                                                                                             |
-| --------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Node.js**           | 22.18+ (CI: 22.18 a 24)                                               | Sestavená knihovna `core`, `ingest` a `queue` (job `core-compat`)                                              |
-| **Bun**               | verze v [`.bun-version`](../.bun-version) (nyní 1.4.4)                | Všechny testy; služba, CLI a binárky běží v Bunu. Docker image vychází z `oven/bun` ve stejné verzi            |
-| **Deno**              | 2.x (CI: `v2.x`; fronta s `node:sqlite` vyžaduje Deno 2.2+)           | Stejný job `core-compat` jako Node                                                                             |
-
+| Runtime     | Verze                                                       | Co se v CI ověřuje                                                                                  |
+| ----------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Node.js** | 22.18+ (CI: 22.18 a 24)                                     | Sestavená knihovna `core`, `ingest` a `queue` (job `core-compat`)                                   |
+| **Bun**     | verze v [`.bun-version`](../.bun-version) (nyní 1.4.4)      | Všechny testy; služba, CLI a binárky běží v Bunu. Docker image vychází z `oven/bun` ve stejné verzi |
+| **Deno**    | 2.x (CI: `v2.x`; fronta s `node:sqlite` vyžaduje Deno 2.2+) | Stejný job `core-compat` jako Node                                                                  |
 - Jádro (`core`), ingest a fronta (`queue`) jsou runtime-neutrální: bez API Bunu a Node
   ([ADR-001](ADR-001-protocol-core.md) bod 8). `server` je Hono aplikace (`app.fetch`) bez API
   specifických pro Bun, v CI se ale na Node ani Deno nespouští.

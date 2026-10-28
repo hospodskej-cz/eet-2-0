@@ -115,12 +115,12 @@ proměnné prostředí, ne do konfigurace. Postup krok za krokem je v
 
 Stavové kódy `POST /v1/sales`:
 
-| Kód   | Význam                                                                                 |
-| ----- | -------------------------------------------------------------------------------------- |
-| `200` | EET odpovědělo; `status` v těle říká `accepted`, `verification_ok` nebo `rejected`     |
-| `202` | Ve frontě nebo nejisté; ptej se na `GET /v1/sales/{id}`                                |
-| `422` | Neplatný vstup; viz `issues`                                                           |
-| `409` | `Idempotency-Key` už patří jiné tržbě                                                  |
+| Kód   | Význam                                                                             |
+| ----- | ---------------------------------------------------------------------------------- |
+| `200` | EET odpovědělo; `status` v těle říká `accepted`, `verification_ok` nebo `rejected` |
+| `202` | Ve frontě nebo nejisté; ptej se na `GET /v1/sales/{id}`                            |
+| `422` | Neplatný vstup; viz `issues`                                                       |
+| `409` | `Idempotency-Key` už patří jiné tržbě                                              |
 
 ### CLI
 
