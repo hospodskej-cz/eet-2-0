@@ -8,6 +8,10 @@
 [![EET playground: ověřeno 2026-10-25](https://img.shields.io/badge/EET%20playground-ov%C4%9B%C5%99eno%202026--10--25-brightgreen)](docs/SPEC_NOTES.md#15-živé-ověření-na-playgroundu)
 [![EET produkce: zatím neověřeno](https://img.shields.io/badge/EET%20produkce-zat%C3%ADm%20neov%C4%9B%C5%99eno-orange)](ROADMAP.md)
 
+> **Neoficiální projekt, bez záruky.** Nejde o produkt ani schválený software Finanční správy ČR.
+> Software je poskytován „tak, jak je“. Certifikaci, registraci pokladny a soulad se zákonem o evidenci
+> tržeb si zajišťuje a za ně odpovídá každý provozovatel sám. Viz [Disclaimer](#disclaimer).
+
 Open-source (MIT) brána pro odesílání tržeb do **EET 2.0** (Finanční správa ČR, SOAP rozhraní
 4.1, běžný provoz od 1. 1. 2027). Tržbu přijme v jakémkoli běžném formátu, převede ji na platnou
 datovou zprávu, podepíše, odešle a vrátí jednotnou odpověď. Každou tržbu nejdřív uloží, takže
@@ -262,6 +266,9 @@ Projekt je ve verzi 0.x. Než ho nasadíš na ostrý provoz, vezmi na vědomí:
   jen zpracuje a odešle, nenahrazuje účetní ani právní kontrolu.
 - Licence MIT software poskytuje „tak, jak je“, bez jakékoli záruky. Neexistuje záruka,
   že použití brány splní požadavky ZoET.
+- **Certifikaci řeší každý sám:** získání a správa certifikátů pokladny, registrace u správce daně a
+  případné schvalování či certifikace vlastního pokladního řešení jsou na provozovateli. Projekt nic
+  z toho nevyřizuje ani nezaručuje.
 - Před ostrým nasazením si své řešení ověř s daňovým poradcem.
 
 ## Komunita a správa projektu
