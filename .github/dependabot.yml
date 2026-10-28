@@ -1,0 +1,57 @@
+# Dependabot version updates (weekly, grouped).
+# - github-actions: actions stay pinned to a commit SHA with a "# vX.Y.Z" comment; Dependabot
+#   bumps the SHA and the comment together.
+# - bun: dependencies in package.json are pinned to exact versions; "increase" keeps them exact.
+# - docker: base images in the Dockerfile are pinned by digest.
+# Bumping Bun means changing the Dockerfile image tags, .bun-version, packageManager in
+# package.json and @types/bun together; review such a PR as one unit.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Prague
+    commit-message:
+      prefix: "ci"
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: bun
+    directories:
+      - /
+      - /packages/*
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Prague
+    versioning-strategy: increase
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: scope
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types: ["minor", "patch"]
+      production-dependencies:
+        dependency-type: production
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Prague
+    commit-message:
+      prefix: "chore"
+      include: scope
+    groups:
+      docker:
+        patterns: ["*"]
