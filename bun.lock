@@ -16,9 +16,9 @@
     },
     "packages/cli": {
       "name": "@eet-gateway/cli",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "bin": {
-        "eet": "./src/main.ts",
+        "eet": "./dist/main.js",
       },
       "dependencies": {
         "@eet-gateway/core": "workspace:*",
@@ -29,7 +29,7 @@
     },
     "packages/core": {
       "name": "@eet-gateway/core",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@finitoapp/eet-client": "0.4.0",
         "zod": "4.6.7",
@@ -37,7 +37,7 @@
     },
     "packages/ingest": {
       "name": "@eet-gateway/ingest",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@eet-gateway/core": "workspace:*",
         "zod": "4.6.7",
@@ -48,7 +48,7 @@
     },
     "packages/queue": {
       "name": "@eet-gateway/queue",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@eet-gateway/core": "workspace:*",
         "@eet-gateway/ingest": "workspace:*",
@@ -57,7 +57,7 @@
     },
     "packages/server": {
       "name": "@eet-gateway/server",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@eet-gateway/core": "workspace:*",
         "@eet-gateway/ingest": "workspace:*",
