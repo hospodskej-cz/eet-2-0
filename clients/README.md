@@ -13,21 +13,18 @@ tenký balíček bez závislostí:
 | C#     | `EetGateway.Client` (NuGet)                        | .NET 8, jen `System.Text.Json` | [`dotnet/`](dotnet) |
 
 Balíčky se publikují do Packagistu, PyPI a NuGetu workflowem po tagu `clients-vX.Y.Z` (postup pro
-správce je na konci). Dokud v registru nejsou, nainstaluj je ze složky, viz níže.
+správce je na konci).
 
 ## Instalace
 
 ```sh
-# Python
-pip install ./clients/python            # z checkoutu repozitáře
-
-# PHP: composer.json projektu
-#   "repositories": [{ "type": "path", "url": "../eet-2-0/clients/php" }],
-composer require hospodskej-cz/eet-gateway-client:@dev
-
-# C#
-dotnet add reference clients/dotnet/src/EetGateway.Client
+pip install eet-gateway-client
+composer require hospodskej-cz/eet-gateway-client
+dotnet add package EetGateway.Client
 ```
+
+Z checkoutu repozitáře (vývoj): `pip install ./clients/python`, v `composer.json` repozitář typu
+`path` na `clients/php`, `dotnet add reference clients/dotnet/src/EetGateway.Client`.
 
 ## Použití
 
@@ -218,8 +215,8 @@ Each covers every operation and is one thin package with no dependencies:
 | C#       | `EetGateway.Client` (NuGet)                        | .NET 8, `System.Text.Json`    | [`dotnet/`](dotnet) |
 
 The packages are published to Packagist, PyPI and NuGet by a workflow when a `clients-vX.Y.Z` tag
-is pushed (maintainer steps are at the end). Until they are in a registry, install them from the
-folder (see **Instalace** above; the commands are the same).
+is pushed (maintainer steps are at the end). Install: `pip install eet-gateway-client`,
+`composer require hospodskej-cz/eet-gateway-client`, `dotnet add package EetGateway.Client`.
 
 **Usage** is shown above in Python, PHP and C#; the shape is identical in all three: send a sale
 with an `Idempotency-Key` (your receipt number), get a typed `SaleResult` with a `status`

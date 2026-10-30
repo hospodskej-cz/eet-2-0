@@ -227,10 +227,9 @@ CI je spouští proti skutečnému API. Vygenerované klienty pro PHP, Python a 
 | `packages/server` | HTTP API v1, OpenAPI 3.1, služba                              |
 | `packages/cli`    | Příkaz `eet`                                                  |
 
-**Instalace z npm:** npm balíčky `@eet-gateway/*` jsou po prvním vydání. Zatím nejsou na npm
-publikované (balíčky jsou `private`, jméno a vlastnictví scope jsou otevřená otázka OQ7 v
-[SPEC_NOTES](docs/SPEC_NOTES.md#14-otevřené-otázky)). Dokud nejsou, použij Docker image,
-binárku `eet` z vydání, nebo repozitář (workspace).
+**Instalace z npm:** `npm i @eet-gateway/cli` (nebo `core`, `ingest`, `queue`, `server`). Balíčky jsou
+na npm od verze 0.2.0, od další verze s provenance. Bez Node: Docker image
+`ghcr.io/hospodskej-cz/eet-2-0` nebo binárka `eet` z [vydání](https://github.com/hospodskej-cz/eet-2-0/releases).
 
 ## Stav a omezení
 

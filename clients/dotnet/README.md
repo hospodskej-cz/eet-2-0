@@ -5,7 +5,7 @@ Typed .NET 8 client for the [EET Gateway](https://github.com/hospodskej-cz/eet-2
 jazycích: [clients/README.md](../README.md).
 
 ```sh
-dotnet add reference clients/dotnet/src/EetGateway.Client   # from a checkout; not on NuGet yet
+dotnet add package EetGateway.Client
 ```
 
 ```csharp

@@ -5,9 +5,7 @@ Typed PHP 8.1+ client for the [EET Gateway](https://github.com/hospodskej-cz/eet
 [clients/README.md](../README.md).
 
 ```sh
-# not on Packagist yet: use a path repository from a checkout
-composer config repositories.eet path ../eet-2-0/clients/php
-composer require hospodskej-cz/eet-gateway-client:@dev
+composer require hospodskej-cz/eet-gateway-client
 ```
 
 ```php

@@ -238,10 +238,10 @@ The documents in `docs/` are written in Czech, like the official specification t
 | `packages/server` | HTTP API v1, OpenAPI 3.1, the service                              |
 | `packages/cli`    | The `eet` command                                                  |
 
-**Installing from npm:** the npm packages `@eet-gateway/*` come after the first npm release. They
-are not published yet (the packages are `private`; the name and ownership of the scope are an
-open question, OQ7 in [SPEC_NOTES](docs/SPEC_NOTES.md#14-otevřené-otázky)). Until then use the
-Docker image, the `eet` binary from the releases, or the repository (workspace).
+**Installing from npm:** `npm i @eet-gateway/cli` (or `core`, `ingest`, `queue`, `server`). The packages
+have been on npm since 0.2.0, with provenance from the next release. Without Node: the Docker image
+`ghcr.io/hospodskej-cz/eet-2-0` or the `eet` binary from the
+[releases](https://github.com/hospodskej-cz/eet-2-0/releases).
 
 ## Status and limitations
 

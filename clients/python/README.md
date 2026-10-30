@@ -5,7 +5,7 @@ Typed Python client for the [EET Gateway](https://github.com/hospodskej-cz/eet-2
 [clients/README.md](../README.md).
 
 ```sh
-pip install ./clients/python      # from a checkout; not on PyPI yet
+pip install eet-gateway-client
 ```
 
 ```python
