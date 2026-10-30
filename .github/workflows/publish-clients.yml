@@ -159,7 +159,11 @@ jobs:
           [ "$code" = 200 ] || { echo "::error::PHP_MIRROR_TOKEN is not accepted by GitHub (HTTP $code)"; exit 1; }
           sha=$(git subtree split --prefix=clients/php)
           git push "$remote" "$sha:refs/heads/main"
-          git push "$remote" "$sha:refs/tags/v$VERSION"
+          if git ls-remote --exit-code --tags "$remote" "refs/tags/v$VERSION" > /dev/null; then
+            echo "tag v$VERSION is already on the mirror, leaving it"
+          else
+            git push "$remote" "$sha:refs/tags/v$VERSION"
+          fi
       # Packagist reads the new tag itself when the repository has its GitHub hook; this call is
       # for the case without it and only runs when the token is set.
       - name: Tell Packagist
