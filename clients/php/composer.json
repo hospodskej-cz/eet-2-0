@@ -5,6 +5,10 @@
   "license": "MIT",
   "keywords": ["eet", "eet2", "czech", "fiscalization", "pos"],
   "homepage": "https://github.com/hospodskej-cz/eet-2-0/tree/main/clients",
+  "support": {
+    "issues": "https://github.com/hospodskej-cz/eet-2-0/issues",
+    "source": "https://github.com/hospodskej-cz/eet-2-0/tree/main/clients/php"
+  },
   "require": {
     "php": ">=8.1",
     "ext-curl": "*",

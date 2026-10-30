@@ -12,8 +12,8 @@ tenký balíček bez závislostí:
 | Python | `eet-gateway-client` (import `eet_gateway_client`) | Python 3.9+, jen stdlib        | [`python/`](python) |
 | C#     | `EetGateway.Client` (NuGet)                        | .NET 8, jen `System.Text.Json` | [`dotnet/`](dotnet) |
 
-Balíčky zatím **nejsou publikované** v Packagistu, PyPI ani NuGetu (postup pro správce je na konci).
-Do té doby je nainstaluj ze složky, viz níže.
+Balíčky se publikují do Packagistu, PyPI a NuGetu workflowem po tagu `clients-vX.Y.Z` (postup pro
+správce je na konci). Dokud v registru nejsou, nainstaluj je ze složky, viz níže.
 
 ## Instalace
 
@@ -178,15 +178,30 @@ cd clients/dotnet && dotnet test
 
 ## Publikace (pro správce)
 
-Nic se nepublikuje automaticky.
+Publikuje workflow [`publish-clients.yml`](../.github/workflows/publish-clients.yml) po nahrání
+tagu `clients-vX.Y.Z`. Verze v tagu se musí shodovat s `pyproject.toml`, `EetGateway.Client.csproj`
+a konstantami `__version__` / `Client::VERSION` / `EetGatewayClient.Version` (verzi PHP balíčku
+nese tag); jinak workflow hned skončí. Každý registr se zapíná vlastní proměnnou repozitáře
+(Settings → Secrets and variables → Actions), takže bez nastavení se nic nepublikuje.
 
-- **PyPI:** `cd clients/python && python -m build && twine upload dist/*` (jméno `eet-gateway-client`).
-- **NuGet:** `dotnet pack clients/dotnet/src/EetGateway.Client -c Release` a `dotnet nuget push` (id `EetGateway.Client`).
-- **Packagist:** balíček musí mít `composer.json` v kořeni repozitáře, takže stačí buď samostatný
-  repozitář s obsahem `clients/php` (například `git subtree split --prefix=clients/php`), nebo
-  zrcadlo vytvořené v CI; pak ho na packagist.org zaregistruj pod jménem `hospodskej-cz/eet-gateway-client`.
-- Verzi zvedni v `pyproject.toml`, `EetGateway.Client.csproj`, `composer.json` (tag) a konstantách
-  `__version__` / `Client::VERSION` / `EetGatewayClient.Version`.
+1. **PyPI** (`eet-gateway-client`), proměnná `PUBLISH_PYPI=true`. Na pypi.org → _Publishing_ →
+   _Add a new pending publisher_: GitHub, vlastník `hospodskej-cz`, repozitář `eet-2-0`, workflow
+   `publish-clients.yml`, prostředí prázdné. Žádný token se nevytváří.
+2. **NuGet** (`EetGateway.Client`), proměnná `PUBLISH_NUGET=true`. Buď _Trusted Publishing_ na
+   nuget.org (vlastník `hospodskej-cz`, repozitář `eet-2-0`, workflow `publish-clients.yml`) a
+   proměnná `NUGET_USER` se jménem profilu na nuget.org, nebo secret `NUGET_API_KEY` (klíč s právem
+   push pro `EetGateway.Client`).
+3. **Packagist** (`hospodskej-cz/eet-gateway-client`), proměnná `PUBLISH_PACKAGIST=true`.
+   Packagist chce `composer.json` v kořeni repozitáře, proto workflow zrcadlí `clients/php`
+   (včetně historie, `git subtree split`) do `hospodskej-cz/eet-gateway-php` a nahraje tam i tag
+   `vX.Y.Z`. Zrcadlo je jen ke čtení, issues a PR patří do tohoto repozitáře. Potřebuje secret
+   `PHP_MIRROR_TOKEN` (fine-grained token s _Contents: read and write_ jen pro zrcadlo; deploy
+   klíče organizace nepovoluje). Na packagist.org → _Submit_ zadej
+   `https://github.com/hospodskej-cz/eet-gateway-php`. Nové tagy si Packagist bere přes hook, jinak
+   nastav secret `PACKAGIST_TOKEN` a proměnnou `PACKAGIST_USER`.
+
+Vydání: zvedni verzi na všech místech výše, slij do `main`, pak
+`git tag clients-vX.Y.Z && git push origin clients-vX.Y.Z`.
 
 ---
 
@@ -202,8 +217,9 @@ Each covers every operation and is one thin package with no dependencies:
 | Python   | `eet-gateway-client` (import `eet_gateway_client`) | Python 3.9+, standard library | [`python/`](python) |
 | C#       | `EetGateway.Client` (NuGet)                        | .NET 8, `System.Text.Json`    | [`dotnet/`](dotnet) |
 
-The packages are **not published** to Packagist, PyPI or NuGet yet (maintainer steps are at the
-end). Until then install them from the folder (see **Instalace** above; the commands are the same).
+The packages are published to Packagist, PyPI and NuGet by a workflow when a `clients-vX.Y.Z` tag
+is pushed (maintainer steps are at the end). Until they are in a registry, install them from the
+folder (see **Instalace** above; the commands are the same).
 
 **Usage** is shown above in Python, PHP and C#; the shape is identical in all three: send a sale
 with an `Idempotency-Key` (your receipt number), get a typed `SaleResult` with a `status`
@@ -255,10 +271,10 @@ method, path and parameters. Adding an operation, parameter or field to the API 
 (`.github/workflows/clients.yml` and the main `bun test`) until the clients catch up. Integration
 tests run against the real gateway over a fake EET when `EET_URL` is set; nothing is sent to EET.
 
-**Publishing (maintainers).** Nothing is published automatically. PyPI: `python -m build` in
-`clients/python`, then `twine upload`. NuGet: `dotnet pack`, then `dotnet nuget push`. Packagist
-needs `composer.json` at the repository root, so publish a split repository of `clients/php`
-(for example `git subtree split --prefix=clients/php`) and register it under
-`hospodskej-cz/eet-gateway-client`. Bump the version in `pyproject.toml`, the `.csproj`,
-`composer.json` (git tag) and the `__version__` / `Client::VERSION` / `EetGatewayClient.Version`
-constants.
+**Publishing (maintainers).** `.github/workflows/publish-clients.yml` runs on a `clients-vX.Y.Z`
+tag, after checking that the tag equals the version in all three clients. Each registry has its own
+switch (`PUBLISH_PYPI`, `PUBLISH_NUGET`, `PUBLISH_PACKAGIST`): PyPI and NuGet over trusted
+publishing (OIDC, no stored token; NuGet can also use the secret `NUGET_API_KEY`); Packagist reads
+a read-only mirror, `hospodskej-cz/eet-gateway-php`, that the workflow fills from `clients/php`
+(it needs a fine-grained token `PHP_MIRROR_TOKEN`, since organisation deploy keys are off). Setup
+details are in the Czech section above.
