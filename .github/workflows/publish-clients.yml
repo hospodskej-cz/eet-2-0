@@ -114,6 +114,7 @@ jobs:
         run: |
           set -euo pipefail
           [ -n "$MIRROR_TOKEN" ] || { echo "::error::secret PHP_MIRROR_TOKEN is missing"; exit 1; }
+          MIRROR_TOKEN=$(printf %s "$MIRROR_TOKEN" | tr -d '[:space:]') # a pasted secret often carries a newline
           remote="https://x-access-token:${MIRROR_TOKEN}@github.com/hospodskej-cz/eet-gateway-php.git"
           sha=$(git subtree split --prefix=clients/php)
           git push "$remote" "$sha:refs/heads/main"
