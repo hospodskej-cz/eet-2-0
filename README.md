@@ -1,4 +1,4 @@
-**Česky** | [English](README.en.md)
+**Česky** | [English](README.en.md) | [Web](https://podpalcem.com/eet-gateway)
 
 # EET Gateway
 
@@ -191,7 +191,7 @@ protokolové jádro (`@eet-gateway/core`, jedno odeslání). Viz [QUEUE](docs/QU
 - [C#](examples/csharp/EetExample/Program.cs);
 - [Node jako knihovna](examples/node/send.ts).
 
-CI je spouští proti skutečnému API. Vygenerované klienty pro PHP, Python a C# jsou v
+CI je spouští proti skutečnému API. Klienti pro PHP, Python, C# a Javu jsou v
 [`clients/`](clients/README.md); klienta pro libovolný jiný jazyk vygeneruješ z
 [docs/openapi.json](docs/openapi.json).
 

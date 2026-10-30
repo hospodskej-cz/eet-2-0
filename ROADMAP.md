@@ -56,9 +56,9 @@ Nikdy nezveřejňuj certifikáty, hesla ani data poplatníků ([SECURITY](SECURI
   přes Docker, binárku z vydání nebo z repozitáře.
 - **Docker image v GHCR:** publikační job je připravený a zapíná se proměnnou repozitáře
   `PUBLISH_DOCKER=true` (CONTRIBUTING). Plán.
-- **API klienty** pro PHP, Python a C# jsou vygenerované z `docs/openapi.json` a leží v
-  [`clients/`](clients/README.md). Plán: držet je v souladu s OpenAPI a rozhodnout, zda se budou
-  publikovat do registrů (Packagist, PyPI, NuGet). Rozhodnout.
+- **API klienty** pro PHP, Python, C# a Javu leží v [`clients/`](clients/README.md), hlídač
+  `scripts/gen-clients.ts` je drží v souladu s `docs/openapi.json`. Publikují se do Packagistu,
+  PyPI, NuGetu a Maven Central workflowem po tagu `clients-vX.Y.Z`.
 - **Podepsaná binárka pro macOS:** dnes je nepodepsaná a Gatekeeper ji po stažení blokuje
   ([CLI](docs/CLI.md)). Nápad.
 
@@ -99,7 +99,7 @@ All items are planned, not promised; there are no dates.
 5. A decision on the npm scope name and ownership (SPEC_NOTES OQ7) and a first npm release.
 
 **Also under consideration:** a GHCR Docker image (the job exists, behind `PUBLISH_DOCKER=true`),
-keeping the generated PHP/Python/C# clients in [`clients/`](clients/README.md) in sync with
+keeping the PHP/Python/C#/Java clients in [`clients/`](clients/README.md) in sync with
 OpenAPI, a Postgres queue store (the interface and contract tests exist, the implementation does
 not), more input formats driven by real POS exports, a signed macOS binary.
 

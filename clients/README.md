@@ -11,8 +11,9 @@ tenký balíček bez závislostí:
 | PHP    | `hospodskej-cz/eet-gateway-client` (Composer)      | PHP 8.1+, `ext-curl`           | [`php/`](php)       |
 | Python | `eet-gateway-client` (import `eet_gateway_client`) | Python 3.9+, jen stdlib        | [`python/`](python) |
 | C#     | `EetGateway.Client` (NuGet)                        | .NET 8, jen `System.Text.Json` | [`dotnet/`](dotnet) |
+| Java   | `io.github.hospodskej-cz:eet-gateway-client` (Maven Central) | Java 17+, jen JDK (`java.net.http`) | [`java/`](java) |
 
-Balíčky se publikují do Packagistu, PyPI a NuGetu workflowem po tagu `clients-vX.Y.Z` (postup pro
+Balíčky se publikují do Packagistu, PyPI, NuGetu a Maven Central workflowem po tagu `clients-vX.Y.Z` (postup pro
 správce je na konci).
 
 ## Instalace
@@ -23,8 +24,19 @@ composer require hospodskej-cz/eet-gateway-client
 dotnet add package EetGateway.Client
 ```
 
+Java (Maven `pom.xml`, Gradle: `implementation("io.github.hospodskej-cz:eet-gateway-client:0.1.0")`):
+
+```xml
+<dependency>
+  <groupId>io.github.hospodskej-cz</groupId>
+  <artifactId>eet-gateway-client</artifactId>
+  <version>0.1.0</version>
+</dependency>
+```
+
 Z checkoutu repozitáře (vývoj): `pip install ./clients/python`, v `composer.json` repozitář typu
-`path` na `clients/php`, `dotnet add reference clients/dotnet/src/EetGateway.Client`.
+`path` na `clients/php`, `dotnet add reference clients/dotnet/src/EetGateway.Client`,
+`mvn -f clients/java/pom.xml install`.
 
 ## Použití
 
@@ -103,6 +115,31 @@ else if (result.Status == SaleStatus.Invalid)
         Console.WriteLine($"{issue.Code} {issue.Field}: {issue.Message}"); // nic se neodeslalo
 ```
 
+**Java**
+
+```java
+import cz.hospodskej.eetgateway.*;
+
+EetGatewayClient client =
+    EetGatewayClient.builder("http://localhost:8080").apiKey(System.getenv("EET_API_KEY")).build();
+
+SaleResult result =
+    client.submitSale(
+        SaleInput.of(OffsetDateTime.now(), new BigDecimal("123.50")).poradCis("R-1001"),
+        new RequestOptions().idempotencyKey("R-1001"));
+if (result.isPending()) {      // queued | uncertain: brána to dál posílá sama
+  result = client.waitForSale(result);
+}
+
+if (result.isSuccess()) {
+  System.out.println("POK " + result.pok());
+} else if (result.knownStatus().orElse(null) == SaleStatus.INVALID) {
+  for (Issue issue : result.issues()) {
+    System.out.println(issue.code() + " " + issue.field() + ": " + issue.message()); // nic se neodeslalo
+  }
+}
+```
+
 ## Co klienti dělají
 
 | Odpověď brány | Klient                                                                                                     |
@@ -158,17 +195,19 @@ bun scripts/gen-clients.ts --list   # tabulka operací × klientů
 cd clients/python && pip install -e ".[test]" && pytest
 cd clients/php    && composer install && vendor/bin/phpunit
 cd clients/dotnet && dotnet test
+cd clients/java   && mvn test
 ```
 
 - Testy klientů běží proti malému falešnému serveru v procesu (ne proti EET): Python
-  `http.server`, PHP `php -S` a mock transportu, C# `HttpListener`.
+  `http.server`, PHP `php -S` a mock transportu, C# `HttpListener`, Java `HttpServer` z JDK.
 - **Hlídač rozdílů** má dvě půlky. `scripts/gen-clients.ts` staticky zkontroluje, že tabulka
   operací každého klienta (operationId, metoda, cesta) odpovídá `docs/openapi.json` a že se všechny
   query/header parametry a pole schémat v klientovi objevují. Test v každém jazyce
   (`*openapi_coverage*`, `OpenApiCoverage*`) projde operace ze specifikace, zavolá každou přes
   klienta a ověří metodu, cestu a parametry. Přibude-li operace, parametr nebo pole, CI
   (`.github/workflows/clients.yml` a hlavní `bun test`) spadne, dokud klienti nedoženou API.
-- **Integrační testy** (`test_integration.py`, `IntegrationTest.php`, `IntegrationTests.cs`) se
+- **Integrační testy** (`test_integration.py`, `IntegrationTest.php`, `IntegrationTests.cs`,
+  `IntegrationTest.java`) se
   spouštějí s `EET_URL` a běží proti skutečné bráně nad falešným EET
   (`bun scripts/examples-server.ts 8080`, klíč `examples-key-0123456789`). Bez `EET_URL` se
   přeskočí. Do EET se nic neposílá.
@@ -176,9 +215,9 @@ cd clients/dotnet && dotnet test
 ## Publikace (pro správce)
 
 Publikuje workflow [`publish-clients.yml`](../.github/workflows/publish-clients.yml) po nahrání
-tagu `clients-vX.Y.Z`. Verze v tagu se musí shodovat s `pyproject.toml`, `EetGateway.Client.csproj`
-a konstantami `__version__` / `Client::VERSION` / `EetGatewayClient.Version` (verzi PHP balíčku
-nese tag); jinak workflow hned skončí. Každý registr se zapíná vlastní proměnnou repozitáře
+tagu `clients-vX.Y.Z`. Verze v tagu se musí shodovat s `pyproject.toml`, `EetGateway.Client.csproj`,
+`java/pom.xml` a konstantami `__version__` / `Client::VERSION` / `EetGatewayClient.Version` /
+`EetGatewayClient.VERSION` (verzi PHP balíčku nese tag); jinak workflow hned skončí. Každý registr se zapíná vlastní proměnnou repozitáře
 (Settings → Secrets and variables → Actions), takže bez nastavení se nic nepublikuje.
 
 1. **PyPI** (`eet-gateway-client`), proměnná `PUBLISH_PYPI=true`. Na pypi.org → _Publishing_ →
@@ -196,6 +235,16 @@ nese tag); jinak workflow hned skončí. Každý registr se zapíná vlastní pr
    klíče organizace nepovoluje). Na packagist.org → _Submit_ zadej
    `https://github.com/hospodskej-cz/eet-gateway-php`. Nové tagy si Packagist bere přes hook, jinak
    nastav secret `PACKAGIST_TOKEN` a proměnnou `PACKAGIST_USER`.
+4. **Maven Central** (`io.github.hospodskej-cz:eet-gateway-client`), proměnná `PUBLISH_MAVEN=true`.
+   Jednorázově: účet na [central.sonatype.com](https://central.sonatype.com) (přihlášení přes
+   GitHub), _Namespaces_ → přidat `io.github.hospodskej-cz` a ověřit ho (portál řekne, jak
+   pojmenovat dočasný veřejný repozitář v organizaci `hospodskej-cz`), pak _Account_ →
+   _Generate User Token_. Podpisový klíč: `gpg --full-generate-key`, veřejnou část nahrát na
+   `keyserver.ubuntu.com` (`gpg --keyserver keyserver.ubuntu.com --send-keys <ID>`), soukromou
+   exportovat `gpg --armor --export-secret-keys <ID>`. Do secrets repozitáře:
+   `MAVEN_CENTRAL_USERNAME` a `MAVEN_CENTRAL_PASSWORD` (z user tokenu), `MAVEN_GPG_PRIVATE_KEY`,
+   `MAVEN_GPG_PASSPHRASE`. Verzi, která už je na Central, workflow přeskočí (Central verzi
+   nikdy nepřepíše ani nesmaže).
 
 Vydání: zvedni verzi na všech místech výše, slij do `main`, pak
 `git tag clients-vX.Y.Z && git push origin clients-vX.Y.Z`.
@@ -213,12 +262,14 @@ Each covers every operation and is one thin package with no dependencies:
 | PHP      | `hospodskej-cz/eet-gateway-client` (Composer)      | PHP 8.1+, `ext-curl`          | [`php/`](php)       |
 | Python   | `eet-gateway-client` (import `eet_gateway_client`) | Python 3.9+, standard library | [`python/`](python) |
 | C#       | `EetGateway.Client` (NuGet)                        | .NET 8, `System.Text.Json`    | [`dotnet/`](dotnet) |
+| Java     | `io.github.hospodskej-cz:eet-gateway-client` (Maven Central) | Java 17+, JDK only (`java.net.http`) | [`java/`](java) |
 
-The packages are published to Packagist, PyPI and NuGet by a workflow when a `clients-vX.Y.Z` tag
-is pushed (maintainer steps are at the end). Install: `pip install eet-gateway-client`,
-`composer require hospodskej-cz/eet-gateway-client`, `dotnet add package EetGateway.Client`.
+The packages are published to Packagist, PyPI, NuGet and Maven Central by a workflow when a
+`clients-vX.Y.Z` tag is pushed (maintainer steps are at the end). Install: `pip install
+eet-gateway-client`, `composer require hospodskej-cz/eet-gateway-client`, `dotnet add package
+EetGateway.Client`, or the Maven coordinates `io.github.hospodskej-cz:eet-gateway-client`.
 
-**Usage** is shown above in Python, PHP and C#; the shape is identical in all three: send a sale
+**Usage** is shown above in Python, PHP, C# and Java; the shape is identical in all four: send a sale
 with an `Idempotency-Key` (your receipt number), get a typed `SaleResult` with a `status`
 (`accepted | verification_ok | rejected | queued | uncertain | invalid`), and if it is not settled
 call `wait_for_sale`.
@@ -269,9 +320,11 @@ method, path and parameters. Adding an operation, parameter or field to the API 
 tests run against the real gateway over a fake EET when `EET_URL` is set; nothing is sent to EET.
 
 **Publishing (maintainers).** `.github/workflows/publish-clients.yml` runs on a `clients-vX.Y.Z`
-tag, after checking that the tag equals the version in all three clients. Each registry has its own
-switch (`PUBLISH_PYPI`, `PUBLISH_NUGET`, `PUBLISH_PACKAGIST`): PyPI and NuGet over trusted
+tag, after checking that the tag equals the version in all four clients. Each registry has its own
+switch (`PUBLISH_PYPI`, `PUBLISH_NUGET`, `PUBLISH_PACKAGIST`, `PUBLISH_MAVEN`): PyPI and NuGet over trusted
 publishing (OIDC, no stored token; NuGet can also use the secret `NUGET_API_KEY`); Packagist reads
 a read-only mirror, `hospodskej-cz/eet-gateway-php`, that the workflow fills from `clients/php`
-(it needs a fine-grained token `PHP_MIRROR_TOKEN`, since organisation deploy keys are off). Setup
-details are in the Czech section above.
+(it needs a fine-grained token `PHP_MIRROR_TOKEN`, since organisation deploy keys are off); Maven
+Central takes a signed bundle (namespace `io.github.hospodskej-cz`, secrets `MAVEN_CENTRAL_USERNAME`,
+`MAVEN_CENTRAL_PASSWORD`, `MAVEN_GPG_PRIVATE_KEY`, `MAVEN_GPG_PASSPHRASE`). Setup details are in the
+Czech section above.

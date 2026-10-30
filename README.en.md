@@ -199,7 +199,7 @@ handling done:
 - [C#](examples/csharp/EetExample/Program.cs);
 - [Node as a library](examples/node/send.ts).
 
-CI runs them against the real API. Generated clients for PHP, Python and C# are in
+CI runs them against the real API. Clients for PHP, Python, C# and Java are in
 [`clients/`](clients/README.md); generate a client for any other language from
 [docs/openapi.json](docs/openapi.json).
 

@@ -1,6 +1,6 @@
 name: Clients
 
-# Tests of the PHP, Python and C# API clients (clients/) and the drift guard that keeps them in step
+# Tests of the PHP, Python, C# and Java API clients (clients/) and the drift guard that keeps them in step
 # with docs/openapi.json. Runs only for changes that can affect them.
 on:
   push:
@@ -93,6 +93,24 @@ jobs:
       - name: The package builds
         run: dotnet pack clients/dotnet/src/EetGateway.Client --configuration Release --output "$RUNNER_TEMP/nupkg"
 
+  java:
+    name: Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ["17", "21"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+          cache-dependency-path: clients/java/pom.xml
+      # verify also builds the sources and javadoc jars that Maven Central requires
+      - run: mvn -B -ntp -f clients/java/pom.xml verify
+
   integration:
     name: Against the real gateway (fake EET)
     runs-on: ubuntu-latest
@@ -116,6 +134,10 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 8.0.x
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
       - run: bun install --frozen-lockfile
       - name: Start the real API over a fake EET (scripts/examples-server.ts)
         run: |
@@ -134,3 +156,5 @@ jobs:
           vendor/bin/phpunit tests/IntegrationTest.php
       - name: C#
         run: dotnet test clients/dotnet/EetGateway.Client.sln --configuration Release --filter "FullyQualifiedName~IntegrationTests"
+      - name: Java
+        run: mvn -B -ntp -f clients/java/pom.xml test -Dtest=IntegrationTest

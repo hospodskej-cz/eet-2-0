@@ -1,10 +1,13 @@
 name: Publish clients
 
 # Publishes the API clients (clients/) when a tag `clients-vX.Y.Z` is pushed. The tag has to match
-# the version in all three clients (checked first). Each registry is switched on by its own
+# the version in all four clients (checked first). Each registry is switched on by its own
 # repository variable, so nothing is published until the maintainer has set that registry up:
 #   PUBLISH_PYPI      "true"  PyPI over trusted publishing (OIDC, no token)
 #   PUBLISH_NUGET     "true"  nuget.org; NUGET_USER (trusted publishing) or secret NUGET_API_KEY
+#   PUBLISH_MAVEN     "true"  Maven Central (Central Portal): secrets MAVEN_CENTRAL_USERNAME and
+#                             MAVEN_CENTRAL_PASSWORD (portal user token), MAVEN_GPG_PRIVATE_KEY and
+#                             MAVEN_GPG_PASSPHRASE (signing key); namespace io.github.hospodskej-cz
 #   PUBLISH_PACKAGIST "true"  mirrors clients/php to hospodskej-cz/eet-gateway-php (Packagist needs
 #                             composer.json in the repository root); secret PHP_MIRROR_TOKEN (fine-grained
 #                             token, Contents: read and write on that repository only)
@@ -44,8 +47,10 @@ jobs:
           pyc=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' clients/python/src/eet_gateway_client/client.py)
           php=$(sed -n "s/.*const VERSION = '\(.*\)';/\1/p" clients/php/src/Client.php)
           csc=$(sed -n 's/.*const string Version = "\(.*\)";/\1/p' clients/dotnet/src/EetGateway.Client/EetGatewayClient.cs)
-          echo "tag=$tag pyproject=$py __version__=$pyc csproj=$cs Version=$csc Client::VERSION=$php"
-          for v in "$py" "$pyc" "$cs" "$csc" "$php"; do
+          mvn=$(sed -n 's|^  <version>\(.*\)</version>|\1|p' clients/java/pom.xml)
+          jv=$(sed -n 's/.*String VERSION = "\(.*\)";/\1/p' clients/java/src/main/java/cz/hospodskej/eetgateway/EetGatewayClient.java)
+          echo "tag=$tag pyproject=$py __version__=$pyc csproj=$cs Version=$csc Client::VERSION=$php pom=$mvn VERSION=$jv"
+          for v in "$py" "$pyc" "$cs" "$csc" "$php" "$mvn" "$jv"; do
             [ "$v" = "$tag" ] || { echo "::error::version $v does not match tag clients-v$tag"; exit 1; }
           done
           echo "version=$tag" >> "$GITHUB_OUTPUT"
@@ -96,6 +101,39 @@ jobs:
         run: |
           [ -n "$NUGET_KEY" ] || { echo "::error::no NuGet credentials (variable NUGET_USER or secret NUGET_API_KEY)"; exit 1; }
           dotnet nuget push "nupkg/*.nupkg" --api-key "$NUGET_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+  maven:
+    name: Maven Central
+    needs: verify
+    if: vars.PUBLISH_MAVEN == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
+          server-id: central
+          server-username: MAVEN_CENTRAL_USERNAME
+          server-password: MAVEN_CENTRAL_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Already on Maven Central?
+        id: published
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' "https://repo1.maven.org/maven2/io/github/hospodskej-cz/eet-gateway-client/$VERSION/eet-gateway-client-$VERSION.pom")
+          echo "repo1.maven.org answered HTTP $code"
+          if [ "$code" = 200 ]; then echo "done=true" >> "$GITHUB_OUTPUT"; else echo "done=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Sign, upload and publish
+        if: steps.published.outputs.done != 'true'
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        run: mvn -B -ntp -f clients/java/pom.xml -Prelease deploy
 
   packagist:
     name: Mirror PHP client for Packagist

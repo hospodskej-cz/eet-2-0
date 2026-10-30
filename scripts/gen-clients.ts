@@ -1,4 +1,4 @@
-// Drift guard for the thin hand-written API clients in clients/ (PHP, Python, C#).
+// Drift guard for the thin hand-written API clients in clients/ (PHP, Python, C#, Java).
 //
 // The clients are not generated (see clients/README.md for why), so something has to notice when
 // docs/openapi.json gains an operation, a query parameter, a header or a response field that a
@@ -62,6 +62,12 @@ export const CLIENTS: readonly Client[] = [
     extension: ".cs",
     operations: "EetGatewayClient.cs",
   },
+  {
+    name: "java",
+    src: "clients/java/src/main/java/cz/hospodskej/eetgateway",
+    extension: ".java",
+    operations: "EetGatewayClient.java",
+  },
 ];
 
 const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete", "head", "options"]);
@@ -113,9 +119,12 @@ function statuses(schemas: unknown): string[] {
   return status?.enum ?? [];
 }
 
-/** Matches `"id": ("POST", "/v1/x")`, `'id' => ['POST', '/v1/x']` and `["id"] = ("POST", "/v1/x")`. */
+/**
+ * Matches `"id": ("POST", "/v1/x")`, `'id' => ['POST', '/v1/x']`, `["id"] = ("POST", "/v1/x")` and
+ * `op("id", "POST", "/v1/x")`.
+ */
 const TABLE_ENTRY =
-  /["'](\w+)["']\]?\s*(?:=>|=|:)\s*[([]\s*["']([A-Z]+)["']\s*,\s*["'](\/[^"']*)["']/g;
+  /["'](\w+)["']\]?\s*(?:=>|=|:|,)\s*[([]?\s*["']([A-Z]+)["']\s*,\s*["'](\/[^"']*)["']/g;
 
 function readSources(root: string, client: Client): string {
   const dir = join(root, client.src);

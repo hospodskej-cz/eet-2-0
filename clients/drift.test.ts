@@ -23,7 +23,7 @@ describe("clients/ vs docs/openapi.json", () => {
       },
     };
     const problems = checkClients(extended);
-    expect(problems.filter((p) => p.includes("createRefund"))).toHaveLength(3);
+    expect(problems.filter((p) => p.includes("createRefund"))).toHaveLength(4);
   });
 
   test("a new query parameter is reported", () => {
@@ -45,7 +45,7 @@ describe("clients/ vs docs/openapi.json", () => {
         },
       },
     };
-    expect(checkClients(changed).filter((p) => p.includes('"taxCode"'))).toHaveLength(3);
+    expect(checkClients(changed).filter((p) => p.includes('"taxCode"'))).toHaveLength(4);
   });
 
   test("a new response property is reported", () => {
@@ -53,6 +53,6 @@ describe("clients/ vs docs/openapi.json", () => {
       ...spec,
       components: { schemas: { Extra: { properties: { cashbackAmount: { type: "string" } } } } },
     };
-    expect(checkClients(changed).filter((p) => p.includes('"cashbackAmount"'))).toHaveLength(3);
+    expect(checkClients(changed).filter((p) => p.includes('"cashbackAmount"'))).toHaveLength(4);
   });
 });
