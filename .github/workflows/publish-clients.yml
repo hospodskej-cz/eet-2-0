@@ -13,6 +13,10 @@ on:
   push:
     tags: ["clients-v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish when run by hand (default: from the tag the run is on)"
+        required: false
 
 permissions:
   contents: read
@@ -30,9 +34,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: v
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          tag="${GITHUB_REF_NAME#clients-v}"
+          tag="${INPUT_VERSION:-${GITHUB_REF_NAME#clients-v}}"
           py=$(sed -n 's/^version = "\(.*\)"/\1/p' clients/python/pyproject.toml)
           cs=$(sed -n 's|.*<Version>\(.*\)</Version>.*|\1|p' clients/dotnet/src/EetGateway.Client/EetGateway.Client.csproj)
           pyc=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' clients/python/src/eet_gateway_client/client.py)
@@ -62,6 +68,7 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           packages-dir: dist
+          skip-existing: true
 
   nuget:
     name: NuGet
@@ -99,6 +106,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # the subtree split needs the history of clients/php
+          persist-credentials: false # else the job token overrides the mirror token below
       - name: Push clients/php (with its history) and the version tag to the mirror
         env:
           MIRROR_TOKEN: ${{ secrets.PHP_MIRROR_TOKEN }}
