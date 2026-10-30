@@ -120,7 +120,9 @@
   </build>
 
   <profiles>
-    <!-- mvn -Prelease deploy: signs the artifacts and uploads the bundle to the Central Portal. -->
+    <!-- mvn -Prelease verify: signs the artifacts. The workflow builds the bundle and uploads it
+         to the Central Portal (the central-publishing plugin put maven-metadata-local.xml into it,
+         which the portal rejects). -->
     <profile>
       <id>release</id>
       <build>
@@ -144,17 +146,6 @@
                 </configuration>
               </execution>
             </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.sonatype.central</groupId>
-            <artifactId>central-publishing-maven-plugin</artifactId>
-            <version>0.11.1</version>
-            <extensions>true</extensions>
-            <configuration>
-              <publishingServerId>central</publishingServerId>
-              <autoPublish>true</autoPublish>
-              <waitUntil>published</waitUntil>
-            </configuration>
           </plugin>
         </plugins>
       </build>

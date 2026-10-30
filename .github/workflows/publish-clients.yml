@@ -127,16 +127,41 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' "https://repo1.maven.org/maven2/io/github/hospodskej-cz/eet-gateway-client/$VERSION/eet-gateway-client-$VERSION.pom")
           echo "repo1.maven.org answered HTTP $code"
           if [ "$code" = 200 ]; then echo "done=true" >> "$GITHUB_OUTPUT"; else echo "done=false" >> "$GITHUB_OUTPUT"; fi
-      - name: Sign, upload and publish
+      - name: Sign, bundle, upload and publish
         if: steps.published.outputs.done != 'true'
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
-        run: mvn -B -ntp -f clients/java/pom.xml -Prelease deploy
-      - name: What went into the bundle (only when the upload failed)
-        if: failure()
-        run: find clients/java/target/central-staging clients/java/target -maxdepth 7 -type f \( -path '*central-staging*' -o -name '*.jar' -o -name '*.pom' -o -name '*.asc' \) | sort
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f clients/java/pom.xml -Prelease verify
+          cd clients/java/target
+          a=eet-gateway-client
+          d="bundle/io/github/hospodskej-cz/$a/$VERSION"
+          mkdir -p "$d"
+          for f in "$a-$VERSION.pom" "$a-$VERSION.jar" "$a-$VERSION-sources.jar" "$a-$VERSION-javadoc.jar"; do
+            cp "$f" "$f.asc" "$d/"
+          done
+          (cd "$d" && for f in *; do md5sum "$f" | cut -d' ' -f1 > "$f.md5"; sha1sum "$f" | cut -d' ' -f1 > "$f.sha1"; done)
+          (cd bundle && zip -qr ../central-bundle.zip io)
+          unzip -l central-bundle.zip
+          auth="Authorization: Bearer $(printf '%s:%s' "$MAVEN_CENTRAL_USERNAME" "$MAVEN_CENTRAL_PASSWORD" | base64 -w0)"
+          id=$(curl -fsS -X POST -H "$auth" -F "bundle=@central-bundle.zip" \
+            "https://central.sonatype.com/api/v1/publisher/upload?name=$a-$VERSION&publishingType=AUTOMATIC")
+          echo "deployment $id uploaded"
+          for _ in $(seq 1 90); do
+            status=$(curl -fsS -X POST -H "$auth" "https://central.sonatype.com/api/v1/publisher/status?id=$id")
+            state=$(printf '%s' "$status" | python3 -c 'import json,sys; print(json.load(sys.stdin)["deploymentState"])')
+            echo "state: $state"
+            case "$state" in
+              PUBLISHED) exit 0 ;;
+              FAILED) echo "$status"; exit 1 ;;
+            esac
+            sleep 20
+          done
+          echo "::error::the deployment is still $state after 30 minutes"; exit 1
 
   packagist:
     name: Mirror PHP client for Packagist
