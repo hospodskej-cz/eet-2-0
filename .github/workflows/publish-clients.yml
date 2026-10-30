@@ -134,6 +134,9 @@ jobs:
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         run: mvn -B -ntp -f clients/java/pom.xml -Prelease deploy
+      - name: What went into the bundle (only when the upload failed)
+        if: failure()
+        run: find clients/java/target/central-staging clients/java/target -maxdepth 7 -type f \( -path '*central-staging*' -o -name '*.jar' -o -name '*.pom' -o -name '*.asc' \) | sort
 
   packagist:
     name: Mirror PHP client for Packagist
