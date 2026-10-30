@@ -1,0 +1,123 @@
+name: Publish clients
+
+# Publishes the API clients (clients/) when a tag `clients-vX.Y.Z` is pushed. The tag has to match
+# the version in all three clients (checked first). Each registry is switched on by its own
+# repository variable, so nothing is published until the maintainer has set that registry up:
+#   PUBLISH_PYPI      "true"  PyPI over trusted publishing (OIDC, no token)
+#   PUBLISH_NUGET     "true"  nuget.org; NUGET_USER (trusted publishing) or secret NUGET_API_KEY
+#   PUBLISH_PACKAGIST "true"  mirrors clients/php to hospodskej-cz/eet-gateway-php (Packagist needs
+#                             composer.json in the repository root); secret PHP_MIRROR_TOKEN (fine-grained
+#                             token, Contents: read and write on that repository only)
+# Setup: clients/README.md, "Publikace".
+on:
+  push:
+    tags: ["clients-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-clients
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Versions match the tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: v
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#clients-v}"
+          py=$(sed -n 's/^version = "\(.*\)"/\1/p' clients/python/pyproject.toml)
+          cs=$(sed -n 's|.*<Version>\(.*\)</Version>.*|\1|p' clients/dotnet/src/EetGateway.Client/EetGateway.Client.csproj)
+          pyc=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' clients/python/src/eet_gateway_client/client.py)
+          php=$(sed -n "s/.*const VERSION = '\(.*\)';/\1/p" clients/php/src/Client.php)
+          csc=$(sed -n 's/.*const string Version = "\(.*\)";/\1/p' clients/dotnet/src/EetGateway.Client/EetGatewayClient.cs)
+          echo "tag=$tag pyproject=$py __version__=$pyc csproj=$cs Version=$csc Client::VERSION=$php"
+          for v in "$py" "$pyc" "$cs" "$csc" "$php"; do
+            [ "$v" = "$tag" ] || { echo "::error::version $v does not match tag clients-v$tag"; exit 1; }
+          done
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+  pypi:
+    name: PyPI
+    needs: verify
+    if: vars.PUBLISH_PYPI == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # PyPI trusted publishing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - run: python -m pip install --upgrade pip build
+      - run: python -m build clients/python --outdir dist
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: dist
+
+  nuget:
+    name: NuGet
+    needs: verify
+    if: vars.PUBLISH_NUGET == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # NuGet trusted publishing (when NUGET_USER is set)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet pack clients/dotnet/src/EetGateway.Client --configuration Release --output nupkg
+      - name: Temporary API key from nuget.org trusted publishing
+        id: login
+        if: vars.NUGET_USER != ''
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ vars.NUGET_USER }}
+      - name: Push
+        env:
+          NUGET_KEY: ${{ steps.login.outputs.NUGET_API_KEY || secrets.NUGET_API_KEY }}
+        run: |
+          [ -n "$NUGET_KEY" ] || { echo "::error::no NuGet credentials (variable NUGET_USER or secret NUGET_API_KEY)"; exit 1; }
+          dotnet nuget push "nupkg/*.nupkg" --api-key "$NUGET_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+  packagist:
+    name: Mirror PHP client for Packagist
+    needs: verify
+    if: vars.PUBLISH_PACKAGIST == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the subtree split needs the history of clients/php
+      - name: Push clients/php (with its history) and the version tag to the mirror
+        env:
+          MIRROR_TOKEN: ${{ secrets.PHP_MIRROR_TOKEN }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          [ -n "$MIRROR_TOKEN" ] || { echo "::error::secret PHP_MIRROR_TOKEN is missing"; exit 1; }
+          remote="https://x-access-token:${MIRROR_TOKEN}@github.com/hospodskej-cz/eet-gateway-php.git"
+          sha=$(git subtree split --prefix=clients/php)
+          git push "$remote" "$sha:refs/heads/main"
+          git push "$remote" "$sha:refs/tags/v$VERSION"
+      # Packagist reads the new tag itself when the repository has its GitHub hook; this call is
+      # for the case without it and only runs when the token is set.
+      - name: Tell Packagist
+        env:
+          PACKAGIST_USER: ${{ vars.PACKAGIST_USER }}
+          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+        run: |
+          [ -n "$PACKAGIST_TOKEN" ] || { echo "no PACKAGIST_TOKEN, relying on the GitHub hook"; exit 0; }
+          curl -fsS -X POST -H 'Content-Type: application/json' \
+            -d '{"repository":{"url":"https://packagist.org/packages/hospodskej-cz/eet-gateway-client"}}' \
+            "https://packagist.org/api/update-package?username=$PACKAGIST_USER&apiToken=$PACKAGIST_TOKEN"
