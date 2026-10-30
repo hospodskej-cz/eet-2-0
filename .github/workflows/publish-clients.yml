@@ -114,7 +114,7 @@ jobs:
         run: |
           set -euo pipefail
           [ -n "$MIRROR_TOKEN" ] || { echo "::error::secret PHP_MIRROR_TOKEN is missing"; exit 1; }
-          MIRROR_TOKEN=$(printf %s "$MIRROR_TOKEN" | tr -d '[:space:]ï»¿') # a pasted secret may carry a newline or a BOM
+          MIRROR_TOKEN=$(printf %s "$MIRROR_TOKEN" | LC_ALL=C tr -cd 'A-Za-z0-9_') # keep token characters only: a pasted secret may carry a newline or a BOM
           remote="https://x-access-token:${MIRROR_TOKEN}@github.com/hospodskej-cz/eet-gateway-php.git"
           code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $MIRROR_TOKEN" https://api.github.com/repos/hospodskej-cz/eet-gateway-php)
           echo "mirror token check: HTTP $code, ${#MIRROR_TOKEN} characters, starts with ${MIRROR_TOKEN:0:11}"
