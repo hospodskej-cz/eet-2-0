@@ -1,7 +1,7 @@
 /** Constants taken verbatim from the official interface definition; cross-checked against the
  * vendored XSD/WSDL by test/contract/sources.test.ts. */
 
-export const VERSION = "0.2.0"; // x-release-please-version
+export const VERSION = "0.3.0"; // x-release-please-version
 
 /** Interface version implemented (XSD/WSDL `version`, rozhraní v1.2 §1.1). */
 export const EET_INTERFACE_VERSION = "4.1";

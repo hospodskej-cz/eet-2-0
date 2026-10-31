@@ -8,7 +8,7 @@ import { serve } from "./commands/serve.ts";
 import { validate } from "./commands/validate.ts";
 import { type CliIO, EXIT, UsageError } from "./context.ts";
 
-export const VERSION = "0.2.0"; // x-release-please-version
+export const VERSION = "0.3.0"; // x-release-please-version
 
 export const HELP = `eet — EET 2.0: odesílání tržeb, fronta, HTTP API (verze ${VERSION})
 

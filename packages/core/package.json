@@ -1,6 +1,6 @@
 {
   "name": "@eet-gateway/core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Protocol core: EetTransport, signing and the EET 2.0 SOAP round trip.",
   "keywords": [
     "eet",
