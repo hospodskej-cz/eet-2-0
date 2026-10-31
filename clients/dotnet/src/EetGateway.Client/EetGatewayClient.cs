@@ -37,7 +37,7 @@ public sealed record EetGatewayClientOptions
 /// </example>
 public sealed partial class EetGatewayClient : IDisposable
 {
-    public const string Version = "0.1.0";
+    public const string Version = "0.1.1";
 
     private const string JsonType = "application/json";
 

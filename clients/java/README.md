@@ -8,12 +8,12 @@ Typed Java 17 client for the [EET Gateway](https://github.com/hospodskej-cz/eet-
 <dependency>
   <groupId>io.github.hospodskej-cz</groupId>
   <artifactId>eet-gateway-client</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 
 ```kotlin
-implementation("io.github.hospodskej-cz:eet-gateway-client:0.1.0")  // Gradle (Kotlin DSL)
+implementation("io.github.hospodskej-cz:eet-gateway-client:0.1.1")  // Gradle (Kotlin DSL)
 ```
 
 ```java

@@ -24,13 +24,13 @@ composer require hospodskej-cz/eet-gateway-client
 dotnet add package EetGateway.Client
 ```
 
-Java (Maven `pom.xml`, Gradle: `implementation("io.github.hospodskej-cz:eet-gateway-client:0.1.0")`):
+Java (Maven `pom.xml`, Gradle: `implementation("io.github.hospodskej-cz:eet-gateway-client:0.1.1")`):
 
 ```xml
 <dependency>
   <groupId>io.github.hospodskej-cz</groupId>
   <artifactId>eet-gateway-client</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 

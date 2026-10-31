@@ -11,7 +11,7 @@
     <RootNamespace>EetGateway.Client</RootNamespace>
 
     <PackageId>EetGateway.Client</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Description>Typed .NET client for the EET Gateway HTTP API v1 (Czech EET 2.0). No dependencies beyond the BCL.</Description>
     <Authors>Hospodskej</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

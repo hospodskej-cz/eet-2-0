@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
  */
 public final class EetGatewayClient {
   /** The version of this library. */
-  public static final String VERSION = "0.1.0";
+  public static final String VERSION = "0.1.1";
 
   private static final String JSON = "application/json";
   private static final Pattern IDEMPOTENCY_KEY = Pattern.compile("[\\x21-\\x7e]{1,255}");

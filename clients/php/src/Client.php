@@ -48,7 +48,7 @@ use EetGateway\Client\Model\ValidationBatch;
  */
 final class Client
 {
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.1.1';
 
     private const JSON = 'application/json';
 

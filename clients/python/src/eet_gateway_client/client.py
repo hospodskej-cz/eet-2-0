@@ -52,7 +52,7 @@ from .models import (
     json_default,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 #: Every operation of docs/openapi.json: operationId -> (HTTP method, path). The methods below
 #: send requests through this table, and scripts/gen-clients.ts fails CI when it falls behind

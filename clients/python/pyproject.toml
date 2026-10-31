@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "eet-gateway-client"
-version = "0.1.0"
+version = "0.1.1"
 description = "Typed Python client for the EET Gateway HTTP API v1 (Czech EET 2.0), standard library only."
 readme = "README.md"
 license = "MIT"
