@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/hospodskej-cz/eet-2-0/compare/v0.2.0...v0.3.0) (2026-10-31)
+
+
+### Features
+
+* **clients:** Java client (java.net.http, no dependencies) and Maven Central publishing ([4a2dd87](https://github.com/hospodskej-cz/eet-2-0/commit/4a2dd87c3c15f94c0e9a222bc2cf59ee17bcf998))
+
+
+### Documentation
+
+* the npm packages and the clients are published ([2702ea9](https://github.com/hospodskej-cz/eet-2-0/commit/2702ea91095e97afa14d50df7dc692454671bb0b))
+
 ## [0.2.0](https://github.com/hospodskej-cz/eet-2-0/compare/v0.1.0...v0.2.0) (2026-10-28)
 
 
