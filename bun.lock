@@ -16,7 +16,7 @@
     },
     "packages/cli": {
       "name": "@eet-gateway/cli",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "bin": {
         "eet": "./dist/main.js",
       },
@@ -29,7 +29,7 @@
     },
     "packages/core": {
       "name": "@eet-gateway/core",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "dependencies": {
         "@finitoapp/eet-client": "0.4.0",
         "zod": "4.6.7",
@@ -37,7 +37,7 @@
     },
     "packages/ingest": {
       "name": "@eet-gateway/ingest",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "dependencies": {
         "@eet-gateway/core": "workspace:*",
         "zod": "4.6.7",
@@ -48,7 +48,7 @@
     },
     "packages/queue": {
       "name": "@eet-gateway/queue",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "dependencies": {
         "@eet-gateway/core": "workspace:*",
         "@eet-gateway/ingest": "workspace:*",
@@ -57,12 +57,12 @@
     },
     "packages/server": {
       "name": "@eet-gateway/server",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "dependencies": {
         "@eet-gateway/core": "workspace:*",
         "@eet-gateway/ingest": "workspace:*",
         "@eet-gateway/queue": "workspace:*",
-        "hono": "4.13.14",
+        "hono": "4.13.16",
         "zod": "4.6.7",
       },
       "devDependencies": {
@@ -174,7 +174,7 @@
 
     "fast-uri": ["fast-uri@3.1.9", "", {}, "sha512-hS/0Wt3Ya043oKXs0sIxrMpKQITXhMLIrVAKKXi4gozGC9v7YRWVnXIZzjNPTO02M9BdxLCWqK1yRXgNziVyJQ=="],
 
-    "hono": ["hono@4.13.14", "", {}, "sha512-yhRLQ21U6qa9Hsu2N7Qcbh8tE+WKEcoErjIo56LeSGiGXGp9sA7UpE86Ui9uexb61KakiGwuHMn2QdV7w6i6kQ=="],
+    "hono": ["hono@4.13.16", "", {}, "sha512-AOLOEhvrV+iH92xXCnFr/5+3KjPKcI3xP63XJtX5spAnkznPdHijlIsUTpi7/9EhWqrTCekw5c5zh1K+YsVw7A=="],
 
     "js-yaml": ["js-yaml@5.5.0", "", { "dependencies": { "argparse": "^3.0.3" }, "bin": { "js-yaml": "bin/js-yaml.mjs" } }, "sha512-paNr4LFIFPjeeSmwNYdrb8FafLLG/Cr2Af3GjbsHJ5CxIjH4r0c2emlmRdAtpPAieP1gRVzk6buBbVP5gBMGAg=="],
 
