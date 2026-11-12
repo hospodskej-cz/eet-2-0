@@ -13,7 +13,7 @@
 > tržeb si zajišťuje a za ně odpovídá každý provozovatel sám. Viz [Disclaimer](#disclaimer).
 
 Open-source (MIT) brána pro odesílání tržeb do **EET 2.0** (Finanční správa ČR, SOAP rozhraní
-4.1, běžný provoz od 1. 1. 2027). Tržbu přijme v jakémkoli běžném formátu, převede ji na platnou
+4.1, pilotní provoz od 1. 1. 2027, plný od 1. 2. 2027). Tržbu přijme v jakémkoli běžném formátu, převede ji na platnou
 datovou zprávu, podepíše, odešle a vrátí jednotnou odpověď. Každou tržbu nejdřív uloží, takže
 výpadek sítě ani pád procesu nic neztratí. Po výpadku tržby bezpečně doposílá.
 

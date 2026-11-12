@@ -14,7 +14,7 @@
 > [Disclaimer](#disclaimer).
 
 An open-source (MIT) gateway for sending sales to the Czech **EET 2.0** (electronic registration
-of sales by the Financial Administration, SOAP interface 4.1, in production from 1 January 2027).
+of sales by the Financial Administration, SOAP interface 4.1, pilot from 1 January 2027, full operation from 1 February 2027).
 It takes a sale in any common shape, turns it into a valid data message, signs it, sends it and
 returns one consistent result. Every sale is stored first, so a network outage or a crashed
 process loses nothing, and the gateway resends safely after a failure.
