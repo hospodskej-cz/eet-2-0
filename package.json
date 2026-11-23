@@ -32,12 +32,12 @@
     "verify:packages": "bun scripts/verify-packages.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.3",
+    "@biomejs/biome": "2.6.8",
     "@eet-gateway/core": "workspace:*",
     "@eet-gateway/ingest": "workspace:*",
     "@eet-gateway/queue": "workspace:*",
     "@eet-gateway/server": "workspace:*",
-    "@types/bun": "1.4.4",
+    "@types/bun": "1.4.5",
     "typescript": "7.0.2"
   }
 }
