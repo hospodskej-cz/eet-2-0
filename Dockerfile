@@ -6,7 +6,7 @@
 
 # The build stage only produces platform-independent JavaScript, so it always runs on the build
 # machine's own architecture (no emulation when the image is built for linux/arm64 too).
-FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS build
+FROM --platform=$BUILDPLATFORM oven/bun:1.4.5-alpine@sha256:da816670775f4c2b4e990b6b1847cf5540dcdc721a42033dd331ce7a88ba6a3b AS build
 WORKDIR /src
 # tsconfig.base.json maps @eet-gateway/* to the workspace sources (package.json "exports" point
 # at the built dist/, which this image does not need).
@@ -21,7 +21,7 @@ COPY packages ./packages
 RUN bun build packages/server/src/main.ts --target bun --outfile /out/server.js \
  && mkdir -p /out-data
 
-FROM oven/bun:1.4.4-distroless@sha256:153a951ae40106e125898103e6e990ee0f38e6aee7f561029e26cf9fbed23470
+FROM oven/bun:1.4.5-distroless@sha256:3a210956422ad81cf7532e1fc1f2eb9275d6ef4c2337a9d25d530f798e80726a
 # Version, revision and creation time labels are added by the release workflow.
 LABEL org.opencontainers.image.title="EET Gateway" \
       org.opencontainers.image.description="HTTP gateway for sending sales to the Czech EET 2.0" \
